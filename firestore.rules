@@ -4,6 +4,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function creatorIsPublished(uid) {
+      return exists(/databases/$(database)/documents/creatorProfiles/$(uid))
+        && get(/databases/$(database)/documents/creatorProfiles/$(uid)).data.published == true;
+    }
 
     match /users/{uid} {
       allow read, create, update: if isOwner(uid);
@@ -26,18 +30,19 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.username == username;
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
     match /products/{productId} {
-      allow read: if resource.data.active == true;
+      allow read: if (resource.data.active == true && creatorIsPublished(resource.data.creatorId))
+        || isOwner(resource.data.creatorId);
       allow create: if signedIn() && request.resource.data.creatorId == request.auth.uid;
       allow update, delete: if signedIn() && resource.data.creatorId == request.auth.uid;
     }
 
     match /collections/{collectionId} {
-      allow read: if resource.data.creatorId == request.auth.uid;
+      allow read: if creatorIsPublished(resource.data.creatorId)
+        || isOwner(resource.data.creatorId);
       allow create: if signedIn() && request.resource.data.creatorId == request.auth.uid;
       allow update, delete: if signedIn() && resource.data.creatorId == request.auth.uid;
     }
