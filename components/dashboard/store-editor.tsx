@@ -4,20 +4,21 @@ import Link from "next/link";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Copy, ExternalLink, Link2, Share2 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { demoCreator } from "@/lib/demo/seed";
-import { creatorRepository, getCurrentDemoCreator } from "@/lib/repositories/demo";
+import { auth } from "@/lib/firebase/client";
+import { getCreatorRepository } from "@/lib/repositories";
 import { copyLink, shareLink, whatsappShareUrl } from "@/lib/services/sharing";
 import { validateHttpUrl } from "@/lib/services/url";
 import { imageFileToDataUrl } from "@/lib/services/image";
 import type { Creator, StoreCategory } from "@/types/store";
 
 const cats:StoreCategory[]=["Tech","Beauty","Fashion","Fitness","Home","Gaming","Food","Lifestyle","Other"];
-export function StoreEditor(){const[creator,setCreator]=useState<Creator>(demoCreator);const[notice,setNotice]=useState("");
-  useEffect(()=>{const timer=window.setTimeout(()=>setCreator(getCurrentDemoCreator()),0);return()=>window.clearTimeout(timer);},[]);
+export function StoreEditor(){const[creator,setCreator]=useState<Creator | null>(null);const[notice,setNotice]=useState("");
+  useEffect(()=>{const uid=auth?.currentUser?.uid;if(!uid)return;void getCreatorRepository().getForUser(uid).then((profile)=>setCreator(profile)).catch((error)=>setNotice(error instanceof Error?error.message:"Could not load your store."));},[]);
   async function photo(e:ChangeEvent<HTMLInputElement>){const file=e.target.files?.[0];if(!file)return;try{const avatarUrl=await imageFileToDataUrl(file,512);setCreator((v)=>({...v,avatarUrl}));setNotice("");}catch(caught){setNotice(caught instanceof Error?caught.message:"Could not use that image.");}}
   function patch<K extends keyof Creator>(key:K,value:Creator[K]){setCreator((v)=>({...v,[key]:value}));}
-  async function save(){const invalid=Object.entries(creator.socialLinks).find(([,value])=>value&&!validateHttpUrl(value));if(invalid){setNotice(`Enter a valid http:// or https:// link for ${invalid[0]}.`);return;}await creatorRepository.save(creator);setNotice("Saved in demo mode on this device.");}
-  const storeUrl=`https://creatorstore.com/${creator.username}`;
+  async function save(){if(!creator)return;const invalid=Object.entries(creator.socialLinks).find(([,value])=>value&&!validateHttpUrl(value));if(invalid){setNotice(`Enter a valid http:// or https:// link for ${invalid[0]}.`);return;}try{await getCreatorRepository().save(creator);setNotice("Store changes saved.");}catch(caught){setNotice(caught instanceof Error?caught.message:"Could not save your changes.");}}
+  if(!creator) return <DashboardShell title="My store"><p className="text-sm text-[#7a877e]">Loading your store…</p></DashboardShell>;
+  const storeUrl=`${typeof window !== "undefined" ? window.location.origin : "https://creatorstore.com"}/${creator.username}`;
   function currentStoreUrl(){return `${window.location.origin}/${creator.username}`;}
   async function copy(){try{await copyLink(currentStoreUrl());setNotice("Store link copied.");}catch{setNotice("Clipboard access isn’t available in this browser.");}}
   async function share(){try{const status=await shareLink(currentStoreUrl(),creator.displayName,"Take a look at my picks");setNotice(status==="copied"?"Store link copied.":"Store shared.");}catch{setNotice("Sharing was cancelled.");}}
