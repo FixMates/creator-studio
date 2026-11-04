@@ -14,8 +14,8 @@ import type { Creator, StoreCategory } from "@/types/store";
 const cats:StoreCategory[]=["Tech","Beauty","Fashion","Fitness","Home","Gaming","Food","Lifestyle","Other"];
 export function StoreEditor(){const[creator,setCreator]=useState<Creator | null>(null);const[notice,setNotice]=useState("");
   useEffect(()=>{const uid=auth?.currentUser?.uid;if(!uid)return;void getCreatorRepository().getForUser(uid).then((profile)=>setCreator(profile)).catch((error)=>setNotice(error instanceof Error?error.message:"Could not load your store."));},[]);
-  async function photo(e:ChangeEvent<HTMLInputElement>){const file=e.target.files?.[0];if(!file)return;try{const avatarUrl=await imageFileToDataUrl(file,512);setCreator((v)=>({...v,avatarUrl}));setNotice("");}catch(caught){setNotice(caught instanceof Error?caught.message:"Could not use that image.");}}
-  function patch<K extends keyof Creator>(key:K,value:Creator[K]){setCreator((v)=>({...v,[key]:value}));}
+  async function photo(e:ChangeEvent<HTMLInputElement>){const file=e.target.files?.[0];if(!file)return;try{const avatarUrl=await imageFileToDataUrl(file,512);setCreator((v)=>v?({...v,avatarUrl}):v);setNotice("");}catch(caught){setNotice(caught instanceof Error?caught.message:"Could not use that image.");}}
+  function patch<K extends keyof Creator>(key:K,value:Creator[K]){setCreator((v)=>v?({...v,[key]:value}):v);}
   async function save(){if(!creator)return;const invalid=Object.entries(creator.socialLinks).find(([,value])=>value&&!validateHttpUrl(value));if(invalid){setNotice(`Enter a valid http:// or https:// link for ${invalid[0]}.`);return;}try{await getCreatorRepository().save(creator);setNotice("Store changes saved.");}catch(caught){setNotice(caught instanceof Error?caught.message:"Could not save your changes.");}}
   if(!creator) return <DashboardShell title="My store"><p className="text-sm text-[#7a877e]">Loading your store…</p></DashboardShell>;
   const storeUrl=`${typeof window !== "undefined" ? window.location.origin : "https://creatorstore.com"}/${creator.username}`;
