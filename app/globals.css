@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #fbfcf9; color: #1d3026; font-family: Arial, Helvetica, sans-serif; }
+a { text-decoration: none; }
+.eyebrow { color: #6c967e; font-size: .7rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.field-label { display: block; color: #38483e; font-size: .85rem; font-weight: 600; }
+.field-input { display: block; width: 100%; margin-top: .45rem; border: 1px solid #dfe4dc; border-radius: .8rem; background: white; padding: .8rem .9rem; color: #1d3026; outline: none; }
+.field-input:focus { border-color: #6c967e; box-shadow: 0 0 0 3px rgb(108 150 126 / 14%); }
+::selection { background: #cfe0d2; color: #1d3026; }
