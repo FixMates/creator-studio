@@ -21,12 +21,14 @@ export const creatorRepository: CreatorRepository = {
 };
 export const productRepository: ProductRepository = {
   async list() { return read<StoreProduct[]>(KEYS.products, demoProducts).slice().sort((a, b) => a.order - b.order); },
+  async listPublic(creatorId) { return read<StoreProduct[]>(KEYS.products, demoProducts).filter((item) => item.creatorId === creatorId && item.active).slice().sort((a, b) => a.order - b.order); },
   async save(product) { const items = read<StoreProduct[]>(KEYS.products, demoProducts); const index = items.findIndex((item) => item.id === product.id); if (index < 0) items.push(product); else items[index] = product; write(KEYS.products, items); },
   async delete(id) { write(KEYS.products, read<StoreProduct[]>(KEYS.products, demoProducts).filter((item) => item.id !== id)); },
   async reorder(ids) { const items = read<StoreProduct[]>(KEYS.products, demoProducts).map((item) => ({ ...item, order: ids.indexOf(item.id) < 0 ? item.order : ids.indexOf(item.id) })); write(KEYS.products, items); },
 };
 export const collectionRepository: CollectionRepository = {
   async list() { return read<StoreCollection[]>(KEYS.collections, demoCollections).slice().sort((a, b) => a.order - b.order); },
+  async listPublic(creatorId) { return read<StoreCollection[]>(KEYS.collections, demoCollections).filter((item) => item.creatorId === creatorId).slice().sort((a, b) => a.order - b.order); },
   async save(collection) { const items = read<StoreCollection[]>(KEYS.collections, demoCollections); const index = items.findIndex((item) => item.id === collection.id); if (index < 0) items.push(collection); else items[index] = collection; write(KEYS.collections, items); },
   async delete(id) { write(KEYS.collections, read<StoreCollection[]>(KEYS.collections, demoCollections).filter((item) => item.id !== id)); },
 };
