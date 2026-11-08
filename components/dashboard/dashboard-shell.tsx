@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, CircleUserRound, FolderHeart, LayoutDashboard, Package, Settings, Store } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { getCreatorRepository } from "@/lib/repositories";
 import type { Creator } from "@/types/store";
@@ -22,9 +23,14 @@ export function DashboardShell({ children, title }: { children: ReactNode; title
   const [creator, setCreator] = useState<Creator | null>(null);
 
   useEffect(() => {
-    const uid = auth?.currentUser?.uid;
-    if (!uid) return;
-    void getCreatorRepository().getForUser(uid).then(setCreator).catch(() => setCreator(null));
+    if (!auth) { setCreator(null); return; }
+    const load = (uid?: string) => {
+      if (!uid) { setCreator(null); return; }
+      void getCreatorRepository().getForUser(uid).then(setCreator).catch(() => setCreator(null));
+    };
+    load(auth.currentUser?.uid);
+    const unsubscribe = onAuthStateChanged(auth, (user) => load(user?.uid));
+    return unsubscribe;
   }, [pathname]);
 
   const initial = creator?.displayName?.[0]?.toUpperCase() ?? "C";
