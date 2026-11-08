@@ -3,16 +3,22 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, ArrowUpRight, Link2, Play, Share2 } from "lucide-react";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
-import { getCreatorRepository } from "@/lib/repositories";
+import { getCollectionRepository, getCreatorRepository, getProductRepository } from "@/lib/repositories";
 import { copyLink, shareLink, whatsappShareUrl } from "@/lib/services/sharing";
 import type { Creator, StoreCollection, StoreProduct } from "@/types/store";
 import { validateHttpUrl } from "@/lib/services/url";
 
 function InitialAvatar({creator,size="large"}:{creator:Creator;size?:"large"|"small"}){return <span className={`grid shrink-0 place-items-center overflow-hidden rounded-full bg-[#e2e9df] font-serif italic text-[#4e6955] ${size==="large"?"size-[88px] text-3xl":"size-10 text-base"}`}>{creator.avatarUrl?<span className="h-full w-full bg-cover bg-center" style={{backgroundImage:`url(${creator.avatarUrl})`}}/>:creator.displayName[0]?.toLowerCase()}</span>}
 export function Storefront({username}:{username:string}){const[creator,setCreator]=useState<Creator|null>(null);const[products,setProducts]=useState<StoreProduct[]>([]);const[collections,setCollections]=useState<StoreCollection[]>([]);const[notice,setNotice]=useState("");
-  useEffect(()=>{let cancelled=false;void (async()=>{try{const profile=await getCreatorRepository().get(username);if(!profile||!db){if(!cancelled)setCreator(null);return;}const [productDocs,collectionDocs]=await Promise.all([getDocs(query(collection(db,"products"),where("creatorId","==",profile.id),where("active","==",true))),getDocs(query(collection(db,"collections"),where("creatorId","==",profile.id)))]);const p=productDocs.docs.map((snap)=>{const d=snap.data();return {id:snap.id,creatorId:String(d.creatorId),name:String(d.title),description:String(d.description??""),imageUrl:String(d.imageURL??""),destinationUrl:String(d.destinationURL),price:d.displayPrice||undefined,currency:d.currency||"INR",source:String(d.source??""),recommendation:String(d.recommendation??""),reviewUrl:d.reviewURL||undefined,reviewType:d.reviewType||undefined,featured:d.featured===true,active:d.active!==false,clicks:0,collectionIds:[],order:Number(d.sortOrder??0)} as StoreProduct;}).sort((a,b)=>a.order-b.order);const cs=collectionDocs.docs.map((snap)=>{const d=snap.data();return {id:snap.id,creatorId:String(d.creatorId),title:String(d.name),description:String(d.description??""),imageUrl:d.imageURL||undefined,productIds:Array.isArray(d.productIds)?d.productIds:[],order:Number(d.sortOrder??0)} as StoreCollection;}).sort((a,b)=>a.order-b.order);if(!cancelled){setCreator(profile);setProducts(p);setCollections(cs);}}catch{if(!cancelled)setCreator(null);}})();return()=>{cancelled=true;};},[username]);
+  useEffect(()=>{let cancelled=false;void (async()=>{try{
+    const profile=await getCreatorRepository().get(username);
+    if(!profile){if(!cancelled)setCreator(null);return;}
+    const [p,cs]=await Promise.all([
+      getProductRepository().listPublic(profile.id),
+      getCollectionRepository().listPublic(profile.id),
+    ]);
+    if(!cancelled){setCreator(profile);setProducts(p);setCollections(cs);}
+  }catch(error){console.error("Failed to load public storefront:",error);if(!cancelled)setCreator(null);}})();return()=>{cancelled=true;};},[username]);
   const featured=useMemo(()=>products.filter((product)=>product.featured).sort((a,b)=>a.order-b.order),[products]);
   async function share(){const url=`${window.location.origin}/${username}`;try{const result=await shareLink(url,creator?.displayName??"CreatorStore",creator?.bio);setNotice(result==="copied"?"Store link copied.":"Store shared.");}catch{try{await copyLink(url);setNotice("Store link copied.");}catch{setNotice("Sharing isn’t available here.");}}}
   if(!creator)return <main className="grid min-h-screen place-items-center bg-[#f8f9f5] px-6 text-center"><section><p className="eyebrow">Store not found</p><h1 className="mt-3 text-3xl font-semibold">This little corner isn’t ready yet.</h1><p className="mt-3 text-sm text-[#7d8980]">Check the link or create your own CreatorStore.</p><Link href="/onboarding" className="mt-6 inline-flex rounded-full bg-[#315c4c] px-5 py-3 text-sm font-semibold text-white">Create your store <ArrowRight size={15}/></Link></section></main>;
