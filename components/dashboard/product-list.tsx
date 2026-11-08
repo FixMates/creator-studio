@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import { ArrowDown, ArrowUp, ArrowUpRight, Heart, MoreHorizontal, Package, Plus, Trash2 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { auth } from "@/lib/firebase/client";
@@ -21,7 +22,11 @@ export function ProductList() {
     finally { setReady(true); }
   }
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => {
+    if (!auth) { void refresh(); return; }
+    const unsubscribe = onAuthStateChanged(auth, () => { void refresh(); });
+    return unsubscribe;
+  }, []);
 
   async function toggleFeatured(product: StoreProduct) {
     await getProductRepository().save({ ...product, featured: !product.featured });
