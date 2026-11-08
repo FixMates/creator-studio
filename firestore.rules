@@ -10,8 +10,8 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read, create, update: if isOwner(uid);
-      allow delete: if false;
+      allow get, create, update: if isOwner(uid);
+      allow list, delete: if false;
     }
 
     match /creatorProfiles/{uid} {
@@ -26,25 +26,30 @@ service cloud.firestore {
 
     match /usernames/{username} {
       allow get: if true;
-      allow list: if false;
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.username == username;
-      allow update, delete: if false;
+      allow list, update, delete: if false;
     }
 
     match /products/{productId} {
-      allow read: if (resource.data.active == true && creatorIsPublished(resource.data.creatorId))
-        || isOwner(resource.data.creatorId);
-      allow create: if signedIn() && request.resource.data.creatorId == request.auth.uid;
-      allow update, delete: if signedIn() && resource.data.creatorId == request.auth.uid;
+      allow get, list: if isOwner(resource.data.creatorId)
+        || (resource.data.active == true && creatorIsPublished(resource.data.creatorId));
+      allow create: if signedIn()
+        && request.resource.data.creatorId == request.auth.uid;
+      allow update: if isOwner(resource.data.creatorId)
+        && request.resource.data.creatorId == resource.data.creatorId;
+      allow delete: if isOwner(resource.data.creatorId);
     }
 
     match /collections/{collectionId} {
-      allow read: if creatorIsPublished(resource.data.creatorId)
-        || isOwner(resource.data.creatorId);
-      allow create: if signedIn() && request.resource.data.creatorId == request.auth.uid;
-      allow update, delete: if signedIn() && resource.data.creatorId == request.auth.uid;
+      allow get, list: if isOwner(resource.data.creatorId)
+        || creatorIsPublished(resource.data.creatorId);
+      allow create: if signedIn()
+        && request.resource.data.creatorId == request.auth.uid;
+      allow update: if isOwner(resource.data.creatorId)
+        && request.resource.data.creatorId == resource.data.creatorId;
+      allow delete: if isOwner(resource.data.creatorId);
     }
   }
 }
