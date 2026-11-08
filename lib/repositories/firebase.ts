@@ -89,10 +89,22 @@ export const firebaseProductRepository: ProductRepository = {
   async list(creatorId) {
     requireOwner(creatorId);
     const store = requireDb();
-    const [productDocs, collectionDocs] = await Promise.all([getDocs(query(collection(store, "products"), where("creatorId", "==", creatorId))), getDocs(query(collection(store, "collections"), where("creatorId", "==", creatorId)))]);
+    const [productDocs, collectionDocs] = await Promise.all([
+      getDocs(query(collection(store, "products"), where("creatorId", "==", creatorId))),
+      getDocs(query(collection(store, "collections"), where("creatorId", "==", creatorId))),
+    ]);
     const membership = new Map<string, string[]>();
     for (const item of collectionDocs.docs) for (const productId of (item.data().productIds as string[] ?? [])) membership.set(productId, [...(membership.get(productId) ?? []), item.id]);
     return productDocs.docs.map((item) => productFromDoc(item, membership.get(item.id) ?? [])).sort((a, b) => a.order - b.order);
+  },
+  async listPublic(creatorId) {
+    const store = requireDb();
+    const snaps = await getDocs(query(
+      collection(store, "products"),
+      where("creatorId", "==", creatorId),
+      where("active", "==", true),
+    ));
+    return snaps.docs.map((item) => productFromDoc(item, [])).sort((a, b) => a.order - b.order);
   },
   async save(product) {
     requireOwner(product.creatorId);
@@ -135,6 +147,7 @@ export const firebaseProductRepository: ProductRepository = {
 
 export const firebaseCollectionRepository: CollectionRepository = {
   async list(creatorId) { requireOwner(creatorId); const snaps = await getDocs(query(collection(requireDb(), "collections"), where("creatorId", "==", creatorId))); return snaps.docs.map(collectionFromDoc).sort((a, b) => a.order - b.order); },
+  async listPublic(creatorId) { const snaps = await getDocs(query(collection(requireDb(), "collections"), where("creatorId", "==", creatorId))); return snaps.docs.map(collectionFromDoc).sort((a, b) => a.order - b.order); },
   async save(item) {
     requireOwner(item.creatorId);
     if (!item.title.trim() || item.title.length > 80) throw new Error("Enter a collection name under 80 characters.");
