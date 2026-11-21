@@ -39,7 +39,7 @@ export function AnalyticsDashboard() {
   const maxValue = Math.max(1, ...daily.map((day) => Math.max(day.views, day.clicks)));
   const totalProducts = summary.totalProducts ?? 0;
   const sources = summary.sources ?? [];
-  const topProducts = summary.topProducts ?? [];
+  const topProducts = (summary.topProducts ?? []).slice(0, 5);
 
   return <DashboardShell title="Analytics">
     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
