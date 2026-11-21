@@ -26,7 +26,14 @@ export function AnalyticsDashboard() {
     finally { setLoading(false); }
   }
 
-  useEffect(() => {\n    if (!auth) { setLoading(false); setError("Firebase authentication is not configured."); return; }\n    const unsubscribe = onAuthStateChanged(auth, (user) => {\n      if (user) void load(30);\n      else { setLoading(false); setError("Sign in to view your analytics."); }\n    });\n    return unsubscribe;\n  }, []);
+  useEffect(() => {
+    if (!auth) { setLoading(false); setError("Firebase authentication is not configured."); return; }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) void load(30);
+      else { setLoading(false); setError("Sign in to view your analytics."); }
+    });
+    return unsubscribe;
+  }, []);
 
   const daily = summary.daily ?? [];
   const maxValue = Math.max(1, ...daily.map((day) => Math.max(day.views, day.clicks)));
