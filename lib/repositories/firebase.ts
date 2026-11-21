@@ -199,7 +199,7 @@ export const firebaseAnalyticsRepository: AnalyticsRepository = {
     const daily: AnalyticsDay[] = [...dailyMap.entries()].map(([date, counts]) => ({ date, ...counts }));
     const topProducts: AnalyticsProduct[] = [...productMap.entries()]
       .map(([productId, clicks]) => ({ productId, name: products.find((product) => product.id === productId)?.name ?? "Deleted product", clicks }))
-      .sort((a, b) => b.clicks - a.clicks).slice(0, 5);
+      .sort((a, b) => b.clicks - a.clicks);
     const sources: AnalyticsSource[] = [...sourceMap.entries()].map(([source, visits]) => ({ source, visits })).sort((a, b) => b.visits - a.visits).slice(0, 6);
     return {
       storeViews, productClicks, topProductId: topProducts[0]?.productId,
