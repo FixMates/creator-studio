@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, ArrowUpRight, Check, Compass, Link2, Play, Share2, Sparkles } from "lucide-react";
 import { getCollectionRepository, getCreatorRepository, getProductRepository } from "@/lib/repositories";
 import { copyLink, shareLink, whatsappShareUrl } from "@/lib/services/sharing";
+import { trackStoreView } from "@/lib/services/analytics";
 import type { Creator, StoreCollection, StoreProduct } from "@/types/store";
 import { validateHttpUrl } from "@/lib/services/url";
 
@@ -40,7 +41,7 @@ export function Storefront({ username }: { username: string }) {
           getProductRepository().listPublic(profile.id),
           getCollectionRepository().listPublic(profile.id),
         ]);
-        if (!cancelled) { setCreator(profile); setProducts(p); setCollections(cs); }
+        if (!cancelled) { setCreator(profile); setProducts(p); setCollections(cs); void trackStoreView(profile.id, profile.username); }
       } catch (error) {
         console.error("Failed to load public storefront:", error);
         if (!cancelled) setLoadFailed(true);
