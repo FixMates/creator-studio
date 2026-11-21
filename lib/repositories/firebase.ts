@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  collection, deleteDoc, doc, getDoc, getDocs, limit, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, writeBatch,
+  collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, writeBatch,
   type DocumentData, type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
@@ -164,7 +164,7 @@ export const firebaseAnalyticsRepository: AnalyticsRepository = {
     const [products, collections, events] = await Promise.all([
       firebaseProductRepository.list(creatorId),
       firebaseCollectionRepository.list(creatorId),
-      getDocs(query(collection(store, "analyticsEvents"), where("creatorId", "==", creatorId), limit(1000))),
+      getDocs(query(collection(store, "analyticsEvents"), where("creatorId", "==", creatorId), orderBy("createdAt", "desc"), limit(1000))),
     ]);
     const now = Date.now();
     const start = now - days * 24 * 60 * 60 * 1000;
