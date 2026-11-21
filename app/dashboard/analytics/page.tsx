@@ -1,2 +1,5 @@
-import { SimpleSection } from "@/components/dashboard/simple-section";
-export default function AnalyticsPage(){return <SimpleSection kind="analytics"/>;}
+import { AnalyticsDashboard } from "@/components/dashboard/analytics-dashboard";
+
+export default function AnalyticsPage() {
+  return <AnalyticsDashboard />;
+}
