@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import { BarChart3, Eye, MousePointerClick, Package, RefreshCw, TrendingUp } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { auth } from "@/lib/firebase/client";
@@ -25,7 +26,7 @@ export function AnalyticsDashboard() {
     finally { setLoading(false); }
   }
 
-  useEffect(() => { void load(30); }, []);
+  useEffect(() => {\n    if (!auth) { setLoading(false); setError("Firebase authentication is not configured."); return; }\n    const unsubscribe = onAuthStateChanged(auth, (user) => {\n      if (user) void load(30);\n      else { setLoading(false); setError("Sign in to view your analytics."); }\n    });\n    return unsubscribe;\n  }, []);
 
   const daily = summary.daily ?? [];
   const maxValue = Math.max(1, ...daily.map((day) => Math.max(day.views, day.clicks)));
