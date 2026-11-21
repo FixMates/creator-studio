@@ -1,14 +1,14 @@
 "use client";
 
 import {
-  collection, deleteDoc, doc, getDoc, getDocs, limit, query, runTransaction,
+  collection, deleteDoc, doc, getDoc, getDocs, limit, query, runTransaction, where,
   serverTimestamp, setDoc, updateDoc, where, writeBatch,
   type DocumentData, type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
 import { isValidUsername, normalizeUsername } from "@/lib/services/url";
 import type { AnalyticsRepository, CollectionRepository, CreatorRepository, ProductRepository } from "@/lib/repositories/contracts";
-import type { Creator, CreatorAccount, StoreCollection, StoreProduct } from "@/types/store";
+import type { AnalyticsDay, AnalyticsProduct, AnalyticsSource, Creator, CreatorAccount, StoreCollection, StoreProduct } from "@/types/store";
 
 function requireDb() { if (!db) throw new Error("Firebase is not configured. Add the required Firebase web app environment variables."); return db; }
 function requireOwner(uid: string) { const user = auth?.currentUser; if (!user || user.uid !== uid) throw new Error("Sign in to manage this CreatorStore."); return user; }
@@ -18,7 +18,7 @@ function profileFromDoc(data: DocumentData): Creator {
 }
 function productFromDoc(snap: QueryDocumentSnapshot<DocumentData>, collectionIds: string[]): StoreProduct {
   const data = snap.data();
-  return { id: snap.id, creatorId: String(data.creatorId), name: String(data.title), description: String(data.description ?? ""), imageUrl: String(data.imageURL ?? ""), destinationUrl: String(data.destinationURL), price: typeof data.displayPrice === "string" ? data.displayPrice : undefined, currency: typeof data.currency === "string" ? data.currency : "INR", source: String(data.source ?? ""), recommendation: String(data.recommendation ?? ""), reviewUrl: typeof data.reviewURL === "string" ? data.reviewURL : undefined, reviewType: data.reviewType, featured: data.featured === true, active: data.active === true, clicks: 0, collectionIds, order: Number(data.sortOrder ?? 0) };
+  return { id: snap.id, creatorId: String(data.creatorId), name: String(data.title), description: String(data.description ?? ""), imageUrl: String(data.imageURL ?? ""), destinationUrl: String(data.destinationURL), redirectType: data.redirectType, price: typeof data.displayPrice === "string" ? data.displayPrice : undefined, currency: typeof data.currency === "string" ? data.currency : "INR", source: String(data.source ?? ""), recommendation: String(data.recommendation ?? ""), reviewUrl: typeof data.reviewURL === "string" ? data.reviewURL : undefined, reviewType: data.reviewType, featured: data.featured === true, active: data.active === true, clicks: 0, collectionIds, order: Number(data.sortOrder ?? 0) };
 }
 function collectionFromDoc(snap: QueryDocumentSnapshot<DocumentData>): StoreCollection {
   const data = snap.data();
@@ -114,7 +114,7 @@ export const firebaseProductRepository: ProductRepository = {
     const store = requireDb();
     const ref = doc(store, "products", product.id);
     const previous = await getDoc(ref);
-    const data = { id: product.id, creatorId: product.creatorId, title: product.name.trim(), description: product.description.trim(), imageURL: product.imageUrl, displayPrice: product.price ?? "", currency: product.currency ?? "INR", destinationURL: destination.toString(), source: product.source.trim(), sourceDomain: urlHost(destination.toString()), reviewURL: product.reviewUrl ?? "", reviewType: product.reviewType ?? (product.reviewUrl ? "external" : ""), recommendation: product.recommendation.trim(), featured: product.featured, active: product.active !== false, sortOrder: product.order, createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
+    const data = { id: product.id, creatorId: product.creatorId, title: product.name.trim(), description: product.description.trim(), imageURL: product.imageUrl, displayPrice: product.price ?? "", currency: product.currency ?? "INR", destinationURL: destination.toString(), redirectType: product.redirectType ?? "website", source: product.source.trim(), sourceDomain: urlHost(destination.toString()), reviewURL: product.reviewUrl ?? "", reviewType: product.reviewType ?? (product.reviewUrl ? "external" : ""), recommendation: product.recommendation.trim(), featured: product.featured, active: product.active !== false, sortOrder: product.order, createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
     await setDoc(ref, data);
   },
   async delete(productId) {
@@ -159,8 +159,53 @@ export const firebaseCollectionRepository: CollectionRepository = {
 };
 
 export const firebaseAnalyticsRepository: AnalyticsRepository = {
-  async getSummary(creatorId) {
-    const [products, collections] = await Promise.all([firebaseProductRepository.list(creatorId), firebaseCollectionRepository.list(creatorId)]);
-    return { storeViews: 0, productClicks: 0, totalProducts: products.length, featuredProducts: products.filter((item) => item.featured).length, totalCollections: collections.length };
+  async getSummary(creatorId, days = 30) {
+    requireOwner(creatorId);
+    const store = requireDb();
+    const [products, collections, events] = await Promise.all([
+      firebaseProductRepository.list(creatorId),
+      firebaseCollectionRepository.list(creatorId),
+      getDocs(query(collection(store, "analyticsEvents"), where("creatorId", "==", creatorId), limit(1000))),
+    ]);
+    const now = Date.now();
+    const start = now - days * 24 * 60 * 60 * 1000;
+    const recent = events.docs.map((item) => item.data()).filter((item) => {
+      const timestamp = item.createdAt?.toMillis?.() ?? (item.createdAt?.seconds ? item.createdAt.seconds * 1000 : 0);
+      return timestamp >= start && timestamp <= now + 60_000;
+    });
+    const dailyMap = new Map<string, { views: number; clicks: number }>();
+    const sourceMap = new Map<string, number>();
+    const productMap = new Map<string, number>();
+    for (let offset = days - 1; offset >= 0; offset--) {
+      const date = new Date(now - offset * 86400000).toISOString().slice(0, 10);
+      dailyMap.set(date, { views: 0, clicks: 0 });
+    }
+    let storeViews = 0;
+    let productClicks = 0;
+    for (const event of recent) {
+      const timestamp = event.createdAt?.toMillis?.() ?? (event.createdAt?.seconds ? event.createdAt.seconds * 1000 : 0);
+      const date = new Date(timestamp).toISOString().slice(0, 10);
+      const bucket = dailyMap.get(date);
+      if (event.type === "store_view") {
+        storeViews += 1;
+        if (bucket) bucket.views += 1;
+        const source = typeof event.source === "string" ? event.source : "direct";
+        sourceMap.set(source, (sourceMap.get(source) ?? 0) + 1);
+      } else if (event.type === "product_click") {
+        productClicks += 1;
+        if (bucket) bucket.clicks += 1;
+        if (typeof event.productId === "string") productMap.set(event.productId, (productMap.get(event.productId) ?? 0) + 1);
+      }
+    }
+    const daily: AnalyticsDay[] = [...dailyMap.entries()].map(([date, counts]) => ({ date, ...counts }));
+    const topProducts: AnalyticsProduct[] = [...productMap.entries()]
+      .map(([productId, clicks]) => ({ productId, name: products.find((product) => product.id === productId)?.name ?? "Deleted product", clicks }))
+      .sort((a, b) => b.clicks - a.clicks).slice(0, 5);
+    const sources: AnalyticsSource[] = [...sourceMap.entries()].map(([source, visits]) => ({ source, visits })).sort((a, b) => b.visits - a.visits).slice(0, 6);
+    return {
+      storeViews, productClicks, topProductId: topProducts[0]?.productId,
+      totalProducts: products.length, featuredProducts: products.filter((item) => item.featured).length,
+      totalCollections: collections.length, daily, topProducts, sources, periodDays: days,
+    };
   },
 };
