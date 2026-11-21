@@ -45,6 +45,38 @@ service cloud.firestore {
       allow delete: if isOwner(resource.data.creatorId);
     }
 
+    match /analyticsEvents/{eventId} {
+      // Public storefronts can emit bounded, non-PII events. Only the owning
+      // creator can read their event stream; events cannot be edited or deleted.
+      allow create: if request.resource.data.keys().hasOnly([
+          "type", "creatorId", "username", "productId", "source", "referrerHost", "path", "createdAt"
+        ])
+        && request.resource.data.creatorId is string
+        && request.resource.data.username is string
+        && request.resource.data.username.size() <= 30
+        && request.resource.data.source is string
+        && request.resource.data.source.size() <= 100
+        && request.resource.data.referrerHost is string
+        && request.resource.data.referrerHost.size() <= 120
+        && request.resource.data.path is string
+        && request.resource.data.path.size() <= 200
+        && request.resource.data.createdAt == request.time
+        && (
+          (request.resource.data.type == "store_view"
+            && creatorIsPublished(request.resource.data.creatorId)
+            && !("productId" in request.resource.data))
+          ||
+          (request.resource.data.type == "product_click"
+            && request.resource.data.productId is string
+            && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
+            && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.creatorId == request.resource.data.creatorId
+            && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.active == true
+            && creatorIsPublished(request.resource.data.creatorId))
+        );
+      allow get, list: if signedIn() && resource.data.creatorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     match /collections/{collectionId} {
       allow get: if (signedIn() && !exists(/databases/$(database)/documents/collections/$(collectionId)))
         || isOwner(resource.data.creatorId)
