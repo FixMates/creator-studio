@@ -6,7 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { ArrowDown, ArrowUp, ArrowUpRight, Heart, MoreHorizontal, Package, Plus, Trash2 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { auth } from "@/lib/firebase/client";
-import { getProductRepository } from "@/lib/repositories";
+import { getAnalyticsRepository, getProductRepository } from "@/lib/repositories";
 import type { StoreProduct } from "@/types/store";
 
 export function ProductList() {
@@ -17,7 +17,7 @@ export function ProductList() {
   async function refresh() {
     const uid = auth?.currentUser?.uid;
     if (!uid) { setProducts([]); setReady(true); return; }
-    try { setError(""); setProducts(await getProductRepository().list(uid)); }
+    try { setError(""); const [items, analytics] = await Promise.all([getProductRepository().list(uid), getAnalyticsRepository().getSummary(uid)]); const clicks = new Map((analytics.topProducts ?? []).map((item) => [item.productId, item.clicks])); setProducts(items.map((item) => ({ ...item, clicks: clicks.get(item.id) ?? 0 }))); }
     catch (caught) { setError(caught instanceof Error ? caught.message : "Could not load your products."); }
     finally { setReady(true); }
   }
