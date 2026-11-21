@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Eye, MousePointerClick, Package, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { auth } from "@/lib/firebase/client";
 import { getAnalyticsRepository, getCreatorRepository, getProductRepository } from "@/lib/repositories";
@@ -15,24 +16,32 @@ export function Overview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const uid = auth?.currentUser?.uid;
-    if (!uid) { setLoading(false); return; }
+    if (!auth) { setLoading(false); return; }
     let cancelled = false;
-    void Promise.all([
-      getCreatorRepository().getForUser(uid),
-      getAnalyticsRepository().getSummary(uid),
-      getProductRepository().list(uid),
-    ]).then(([c, s, p]) => {
-      if (cancelled) return;
-      setCreator(c);
-      setSummary(s);
-      setProducts(p);
-    }).catch((error) => {
-      if (!cancelled) console.error("Dashboard data failed to load:", error);
-    }).finally(() => {
-      if (!cancelled) setLoading(false);
+    const load = async (uid: string) => {
+      setLoading(true);
+      try {
+        const [c, s, p] = await Promise.all([
+          getCreatorRepository().getForUser(uid),
+          getAnalyticsRepository().getSummary(uid),
+          getProductRepository().list(uid),
+        ]);
+        if (cancelled) return;
+        setCreator(c);
+        setSummary(s);
+        const clickCounts = new Map((s.topProducts ?? []).map((item) => [item.productId, item.clicks]));
+        setProducts(p.map((item) => ({ ...item, clicks: clickCounts.get(item.id) ?? 0 })));
+      } catch (error) {
+        if (!cancelled) console.error("Dashboard data failed to load:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) void load(user.uid);
+      else { setLoading(false); setCreator(null); setProducts([]); }
     });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; unsubscribe(); };
   }, []);
 
   const topProduct = products.find((product) => product.id === summary.topProductId);
