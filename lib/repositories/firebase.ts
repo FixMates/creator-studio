@@ -1,8 +1,7 @@
 "use client";
 
 import {
-  collection, deleteDoc, doc, getDoc, getDocs, limit, query, runTransaction, where,
-  serverTimestamp, setDoc, updateDoc, where, writeBatch,
+  collection, deleteDoc, doc, getDoc, getDocs, limit, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, writeBatch,
   type DocumentData, type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
