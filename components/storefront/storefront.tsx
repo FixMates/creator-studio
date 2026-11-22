@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Check, ExternalLink, Link2, Search, Share2, ShoppingBag } from "lucide-react";
 import { getCollectionRepository, getCreatorRepository, getProductRepository } from "@/lib/repositories";
-import { copyLink, shareLink, whatsappShareUrl } from "@/lib/services/sharing";
+import { copyLink, shareLink } from "@/lib/services/sharing";
 import { trackStoreView } from "@/lib/services/analytics";
 import type { Creator, StoreCollection, StoreProduct } from "@/types/store";
 import { validateHttpUrl } from "@/lib/services/url";
@@ -22,21 +22,24 @@ export function Storefront({ username }: { username: string }) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [collections, setCollections] = useState<StoreCollection[]>([]);
   const [notice, setNotice] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadState, setLoadState] = useState<{ username: string; status: "loading" | "loaded" | "failed" }>({ username: "", status: "loading" });
+  const loading = loadState.username !== username || loadState.status === "loading";
+  const loadFailed = loadState.username === username && loadState.status === "failed";
   const [search, setSearch] = useState("");
   const [activeCollection, setActiveCollection] = useState<string>("all");
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setLoadFailed(false);
-    setCreator(null);
     void (async () => {
+      let failed = false;
       try {
         const profile = await getCreatorRepository().get(username);
         if (!profile) {
-          if (!cancelled) { setCreator(null); setProducts([]); setCollections([]); }
+          if (!cancelled) {
+            setCreator(null);
+            setProducts([]);
+            setCollections([]);
+          }
           return;
         }
         const [publicProducts, publicCollections] = await Promise.all([
@@ -51,9 +54,11 @@ export function Storefront({ username }: { username: string }) {
         }
       } catch (error) {
         console.error("Failed to load public storefront:", error);
-        if (!cancelled) setLoadFailed(true);
+        failed = true;
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoadState({ username, status: failed ? "failed" : "loaded" });
+        }
       }
     })();
     return () => { cancelled = true; };
