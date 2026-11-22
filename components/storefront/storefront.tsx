@@ -105,15 +105,12 @@ export function Storefront({ username }: { username: string }) {
       </header>
 
       <section className="mx-auto max-w-6xl px-0 sm:px-8">
-        <div className="relative flex min-h-[470px] items-end justify-center overflow-hidden bg-black sm:min-h-[590px] sm:rounded-[2rem]" style={{ backgroundColor: theme.background }}>
-          {creator.avatarUrl ? <div aria-hidden="true" className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("${creator.avatarUrl}")` }} /> : <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,.35),transparent_55%)]" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/10" />
-          <div className="relative z-10 w-full px-5 pb-8 text-center text-white sm:pb-12">
-            <p className="mx-auto mb-3 inline-flex rounded-full border border-white/40 bg-black/25 px-4 py-2 text-[10px] font-bold uppercase tracking-[.18em] backdrop-blur-sm">@{creator.username} · {creator.category}</p>
-            <h1 className="mx-auto max-w-4xl break-words text-5xl font-black leading-[.98] tracking-[-.055em] drop-shadow-lg sm:text-7xl">{creator.displayName}</h1>
-            <div className="mx-auto mt-5 flex flex-wrap justify-center gap-2">
-              {Object.entries(creator.socialLinks).filter(([, value]) => value && validateHttpUrl(value)).map(([key, value]) => <a key={key} href={value} target="_blank" rel="noreferrer" className="rounded-full border border-white/40 bg-black/25 px-4 py-2 text-xs font-semibold capitalize backdrop-blur-sm">{key}</a>)}
-            </div>
+        <div className="relative flex min-h-[500px] items-end justify-center overflow-hidden sm:min-h-[610px] sm:rounded-[2rem]" style={{ backgroundColor: theme.background }}>
+          {creator.avatarUrl ? <div aria-hidden="true" className="absolute inset-0 bg-cover bg-[center_28%]" style={{ backgroundImage: `url("${creator.avatarUrl}")` }} /> : <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,.35),transparent_55%)]" />}
+          <div className="absolute inset-0" style={{ background: `linear-gradient(180deg,transparent 38%,${theme.page} 100%)` }} />
+          <div className="relative z-10 w-full px-5 pb-1 text-center sm:pb-2">
+            <p className="mx-auto mb-3 inline-flex rounded-full border border-black/10 bg-white/65 px-4 py-2 text-[10px] font-bold uppercase tracking-[.18em] backdrop-blur-sm">@{creator.username} · {creator.category}</p>
+            <h1 className="mx-auto max-w-4xl break-words text-5xl font-black leading-[.98] tracking-[-.055em] sm:text-7xl">{creator.displayName}</h1>
           </div>
         </div>
       </section>
