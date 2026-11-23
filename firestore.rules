@@ -84,6 +84,25 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+
+    match /creatorLeads/{leadId} {
+      allow get, list: if signedIn() && resource.data.creatorId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.creatorId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.contact is string
+        && request.resource.data.contact.size() > 0
+        && request.resource.data.contact.size() <= 120
+        && request.resource.data.status in ["new", "contacted", "follow_up", "converted", "not_interested"];
+      allow update: if signedIn()
+        && resource.data.creatorId == request.auth.uid
+        && request.resource.data.creatorId == resource.data.creatorId
+        && request.resource.data.status in ["new", "contacted", "follow_up", "converted", "not_interested"];
+      allow delete: if signedIn() && resource.data.creatorId == request.auth.uid;
+    }
+
     match /collections/{collectionId} {
       allow get: if (signedIn() && !exists(/databases/$(database)/documents/collections/$(collectionId)))
         || isOwner(resource.data.creatorId)
