@@ -80,6 +80,8 @@ export function ProductRedirect({ productId }: { productId: string }) {
       const destination = getSafeRedirectUrl(String(data.destinationURL ?? ""));
       if (!destination) { setMessage("This product link isn’t a valid web address."); return; }
       try { sessionStorage.setItem(returnKey, "1"); } catch {}
+      if (data.redirectType === "whatsapp") void trackWhatsAppClick(creatorId, creatorName ?? "", productId);
+      else void trackExternalClick(creatorId, creatorName ?? "", productId, data.redirectType === "website" ? "website" : data.redirectType === "instagram" || data.redirectType === "facebook" ? "social" : "marketplace");
       if (!cancelled) window.location.assign(destination);
     }).catch(() => {
       if (!cancelled) setMessage("We couldn’t open that product right now.");
