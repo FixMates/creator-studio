@@ -3,12 +3,25 @@ import type { StoreProduct } from "@/types/store";
 export type ShowcaseCollection = { id: string; title: string; description: string; productIds: string[] };
 export type ShowcaseStore = {
   id: string; name: string; username: string; category: string; tagline: string; bio: string;
-  logo: string; cover: string; location: string; since: string;
+  logo: string; profilePhoto: string; cover: string; location: string; since: string;
   collections: ShowcaseCollection[];
   products: StoreProduct[];
 };
 
 const image = (id: string, width = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=85`;
+const profilePhotos: Record<string, string> = {
+  giftzown: "photo-1534528741775-53994a69daeb",
+  shirthub: "photo-1500648767791-00dcc994a43e",
+  sareesaga: "photo-1531123897727-8f129e1688ce",
+  hourandhand: "photo-1506794778202-cad84cf45f1d",
+  crochetnest: "photo-1524504388940-b1c1722653e1",
+  homenest: "photo-1517841905240-472988babdf9",
+  glowtheory: "photo-1544005313-94ddf0286df2",
+  foodcraft: "photo-1507003211169-0a1dd7228f2d",
+  pixelstudio: "photo-1508214751196-bcfd4ca60f91",
+  printandframe: "photo-1535713875002-d1d0cf377fde",
+  ugcroom: "photo-1529139574466-a303027c1d8b",
+};
 const photos = {
   gifts: ["photo-1513201099705-a9746e1e201f","photo-1513883049090-d0b7439799bf","photo-1549465220-1a8b9238cd48","photo-1523438885200-e635ba2c371e","photo-1513519245088-0e12902e5a38","photo-1513364776144-60967b0f800f","photo-1579783902614-a3fb3927b6a5","photo-1513519245088-0e12902e5a38","photo-1516321318423-f06f85e504b3","photo-1490312278390-ab64016e0aa9","photo-1513883049090-d0b7439799bf","photo-1549465220-1a8b9238cd48"],
   shirts: ["photo-1596755094514-f87e34085b2c","photo-1598033129183-c4f50c736f10","photo-1603252109303-2751441dd157","photo-1598033129183-c4f50c736f10","photo-1618354691373-d851c5c3a990","photo-1521572163474-6864f9cf17ab","photo-1503342217505-b0a15ec3261c","photo-1618354691229-88d47f285158","photo-1551028719-00167b16eac5","photo-1591047139829-d91aecb6caea","photo-1627225924765-552d49cf47ad","photo-1618354691438-25bc04584c23"],
@@ -34,7 +47,7 @@ function buildProducts(storeId: string, specs: ProductSpec[], images: string[]):
 }
 function makeStore(id:string,name:string,username:string,category:string,tagline:string,bio:string,logo:string,cover:string,location:string,since:string,products:ProductSpec[],images:string[],collections:[string,string][]):ShowcaseStore {
   const items=buildProducts(id,products,images);
-  return {id,name,username,category,tagline,bio,logo,cover:image(cover,1500),location,since,products:items,collections:collections.map(([title,description],i)=>({id:`${id}-${["featured","everyday","specials"][i]}`,title,description,productIds:items.filter(p=>p.collectionIds.includes(`${id}-${["featured","everyday","specials"][i]}`)).map(p=>p.id)}))};
+  return {id,name,username,category,tagline,bio,logo,profilePhoto:image(profilePhotos[id] ?? "photo-1534528741775-53994a69daeb",320),cover:image(cover,1500),location,since,products:items,collections:collections.map(([title,description],i)=>({id:`${id}-${["featured","everyday","specials"][i]}`,title,description,productIds:items.filter(p=>p.collectionIds.includes(`${id}-${["featured","everyday","specials"][i]}`)).map(p=>p.id)}))};
 }
 
 export const showcaseStores: ShowcaseStore[] = [
