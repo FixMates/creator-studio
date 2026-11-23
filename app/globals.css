@@ -19,3 +19,19 @@ button { touch-action: manipulation; }
   .eyebrow { font-size: .62rem; letter-spacing: .13em; }
   input, select, textarea { max-width: 100%; }
 }
+
+
+/* Six selectable Bubbli storefront directions. */
+.bubbli-theme-ananya h1, .bubbli-theme-ananya h2 { font-family: Georgia, serif; letter-spacing: -.045em; }
+.bubbli-theme-ananya article { border-radius: 1.35rem; }
+.bubbli-theme-meera article { border-radius: 1.8rem; box-shadow: 0 12px 35px -28px rgb(170 65 150 / 45%); }
+.bubbli-theme-meera h1 { font-family: Georgia, serif; font-weight: 500; letter-spacing: -.035em; }
+.bubbli-theme-sundar article { border-radius: .75rem; border-width: 2px; }
+.bubbli-theme-sundar h1, .bubbli-theme-sundar h2 { font-weight: 900; letter-spacing: -.06em; }
+.bubbli-theme-minimal article { border-radius: .45rem; box-shadow: none; }
+.bubbli-theme-minimal section { border-color: #eeeaf4; }
+.bubbli-theme-bold article { border-color: rgb(255 255 255 / 14%); background: #28143d; color: #fff; }
+.bubbli-theme-bold article h3, .bubbli-theme-bold article p { color: #fff; }
+.bubbli-theme-bold header { border-color: rgb(255 255 255 / 16%); background: #211033; color: #fff; }
+.bubbli-theme-lifestyle article { border-radius: 1.6rem; box-shadow: 0 10px 30px -28px rgb(160 85 115 / 45%); }
+.bubbli-theme-lifestyle h1, .bubbli-theme-lifestyle h2 { font-family: Georgia, serif; }
