@@ -174,7 +174,7 @@ service cloud.firestore {
     }
 
     match /analyticsEvents/{eventId} {
-      allow create: if request.resource.data.keys().hasOnly(["type", "creatorId", "username", "productId", "source", "referrerHost", "path", "createdAt"])
+      allow create: if request.resource.data.keys().hasOnly(["type", "creatorId", "username", "productId", "collectionId", "destinationType", "source", "referrerHost", "path", "createdAt"])
         && request.resource.data.creatorId is string
         && request.resource.data.username is string && request.resource.data.username.size() <= 30
         && request.resource.data.source is string && request.resource.data.source.size() <= 100
@@ -186,13 +186,36 @@ service cloud.firestore {
         && (
           (request.resource.data.type == "store_view"
             && request.resource.data.path == "/" + request.resource.data.username
-            && !("productId" in request.resource.data))
+            && !("productId" in request.resource.data)
+            && !("collectionId" in request.resource.data))
           ||
           (request.resource.data.type == "product_click"
             && request.resource.data.productId is string
             && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
             && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.creatorId == request.resource.data.creatorId
             && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.active == true)
+          ||
+          (request.resource.data.type == "whatsapp_click"
+            && request.resource.data.destinationType == "whatsapp"
+            && (!("productId" in request.resource.data)
+              || (request.resource.data.productId is string
+                && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
+                && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.creatorId == request.resource.data.creatorId)))
+          ||
+          (request.resource.data.type == "external_click"
+            && request.resource.data.destinationType in ["marketplace", "website", "social", "other"]
+            && request.resource.data.productId is string
+            && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
+            && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.creatorId == request.resource.data.creatorId)
+          ||
+          (request.resource.data.type == "banner_click"
+            && !("productId" in request.resource.data)
+            && !("collectionId" in request.resource.data))
+          ||
+          (request.resource.data.type == "collection_click"
+            && request.resource.data.collectionId is string
+            && exists(/databases/$(database)/documents/collections/$(request.resource.data.collectionId))
+            && get(/databases/$(database)/documents/collections/$(request.resource.data.collectionId)).data.creatorId == request.resource.data.creatorId)
         );
       allow get, list: if signedIn() && resource.data.creatorId == request.auth.uid;
       allow update, delete: if false;
