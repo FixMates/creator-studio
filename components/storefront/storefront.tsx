@@ -10,6 +10,13 @@ import { trackStoreView } from "@/lib/services/analytics";
 import type { Creator, StoreCollection, StoreProduct } from "@/types/store";
 import { validateHttpUrl } from "@/lib/services/url";
 
+const isDisplayableImage = (value: unknown): value is string => {
+  if (typeof value !== "string" || !value.trim()) return false;
+  const source = value.trim();
+  if (/^https:\/\//i.test(source)) return true;
+  return source.length <= 1_500_000 && /^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/]+={0,2}$/i.test(source);
+};
+
 const themeStyles = {
   ananya: { page: "#fff8fb", ink: "#27133e", accent: "#8b22ef", card: "#ffffff" },
   meera: { page: "#fff7fb", ink: "#3b183d", accent: "#d52ac0", card: "#ffffff" },
@@ -130,7 +137,7 @@ export function Storefront({ username }: { username: string }) {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
           <Link href={`/${username}`} className="flex min-w-0 items-center gap-3" aria-label={`${creator.displayName} home`}>
             <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-black/10 bg-[#f4f2ec] text-sm font-semibold text-[#526b50]">
-              {creator.avatarUrl ? <Image src={creator.avatarUrl} alt={`${creator.displayName} logo`} width={80} height={80} unoptimized className="h-full w-full object-contain" /> : creator.displayName.trim().charAt(0).toUpperCase()}
+              {isDisplayableImage(creator.avatarUrl) ? <Image src={creator.avatarUrl} alt={`${creator.displayName} logo`} width={80} height={80} unoptimized className="h-full w-full object-contain" /> : creator.displayName.trim().charAt(0).toUpperCase()}
             </span>
             <span className="truncate text-sm font-semibold tracking-tight sm:text-base">{creator.displayName}</span>
           </Link>
@@ -145,7 +152,7 @@ export function Storefront({ username }: { username: string }) {
         <section className="border-b border-black/[.08] py-8 sm:py-12">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-9">
             <div className="grid size-28 shrink-0 place-items-center overflow-hidden rounded-2xl border border-black/10 bg-white p-2 shadow-sm sm:size-36">
-              {creator.avatarUrl ? <Image src={creator.avatarUrl} alt={`${creator.displayName} business logo`} width={288} height={288} unoptimized className="h-full w-full object-contain" /> : <span className="text-4xl font-semibold tracking-tight" style={{ color: theme.accent }}>{creator.displayName.trim().charAt(0).toUpperCase()}</span>}
+              {isDisplayableImage(creator.avatarUrl) ? <Image src={creator.avatarUrl} alt={`${creator.displayName} business logo`} width={288} height={288} unoptimized className="h-full w-full object-contain" /> : <span className="text-4xl font-semibold tracking-tight" style={{ color: theme.accent }}>{creator.displayName.trim().charAt(0).toUpperCase()}</span>}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold uppercase tracking-[.2em]" style={{ color: theme.accent }}>{creator.category} · Independent store</p>
@@ -240,7 +247,7 @@ function ProductCard({ product, username, accent }: { product: StoreProduct; use
   return (
     <article className="group min-w-0 overflow-hidden rounded-xl border border-black/[.08] bg-white shadow-[0_3px_14px_-12px_rgba(0,0,0,.25)]">
       <Link href={productUrl} className="relative block aspect-[.88/1] overflow-hidden bg-[#f1efe8]" aria-label={`View ${product.name}`}>
-        {product.imageUrl ? <Image src={product.imageUrl} alt={product.name} fill unoptimized sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 23vw" className="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.025]" /> : <div className="grid h-full place-items-center text-xs text-[#96978d]">Image unavailable</div>}
+        {isDisplayableImage(product.imageUrl) ? <Image src={product.imageUrl} alt={product.name} fill unoptimized sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 23vw" className="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.025]" /> : <div className="grid h-full place-items-center bg-[#f8f6fb] text-xs text-[#96978d]">Image coming soon</div>}
         {product.featured && <span className="absolute left-2 top-2 rounded bg-white/95 px-2 py-1 text-[9px] font-semibold text-[#526b50]">Featured</span>}
       </Link>
       <div className="p-3 sm:p-4">
