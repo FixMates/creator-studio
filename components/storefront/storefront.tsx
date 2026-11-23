@@ -79,7 +79,7 @@ const themeStyles = {
   const whatsappUrl = whatsapp ? (validateHttpUrl(whatsapp) ?? (whatsapp.replace(/\\D/g, "").length >= 10 ? `https://wa.me/${whatsapp.replace(/\\D/g, "")}` : "")) : "";
 
   return (
-    <main className="min-h-screen" style={{ background: theme.page, color: theme.ink }}>
+    <main className={`min-h-screen bubbli-theme-${creator.theme ?? "ananya"}`} style={{ background: theme.page, color: theme.ink }}>
       <header className="sticky top-0 z-30 border-b border-black/[.07] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
           <Link href={`/${username}`} className="flex min-w-0 items-center gap-3" aria-label={`${creator.displayName} home`}>
