@@ -2,8 +2,8 @@
 
 import { firebaseConfigured, demoModeEnabled } from "@/lib/firebase/config";
 import { db } from "@/lib/firebase/client";
-import { analyticsRepository as demoAnalytics, collectionRepository as demoCollections, creatorRepository as demoCreators, productRepository as demoProducts } from "@/lib/repositories/demo";
-import { firebaseAnalyticsRepository, firebaseCollectionRepository, firebaseCreatorRepository, firebaseProductRepository } from "@/lib/repositories/firebase";
+import { analyticsRepository as demoAnalytics, collectionRepository as demoCollections, creatorRepository as demoCreators, productRepository as demoProducts, leadRepository as demoLeads } from "@/lib/repositories/demo";
+import { firebaseAnalyticsRepository, firebaseCollectionRepository, firebaseCreatorRepository, firebaseProductRepository, firebaseLeadRepository } from "@/lib/repositories/firebase";
 
 function unavailable(): never { throw new Error("Firebase configuration is required for production CreatorStore data. Demo data is disabled in production."); }
 function firebaseReady() { if (!firebaseConfigured || !db) unavailable(); }
@@ -12,3 +12,5 @@ export function getCreatorRepository() { if (firebaseConfigured) { firebaseReady
 export function getProductRepository() { if (firebaseConfigured) { firebaseReady(); return firebaseProductRepository; } if (demoModeEnabled) return demoProducts; return unavailable(); }
 export function getCollectionRepository() { if (firebaseConfigured) { firebaseReady(); return firebaseCollectionRepository; } if (demoModeEnabled) return demoCollections; return unavailable(); }
 export function getAnalyticsRepository() { if (firebaseConfigured) { firebaseReady(); return firebaseAnalyticsRepository; } if (demoModeEnabled) return demoAnalytics; return unavailable(); }
+
+export function getLeadRepository() { if (firebaseConfigured) { firebaseReady(); return firebaseLeadRepository; } if (demoModeEnabled) return demoLeads; return unavailable(); }
