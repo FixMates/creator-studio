@@ -6,8 +6,8 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
 import { isValidUsername, normalizeUsername } from "@/lib/services/url";
-import type { AnalyticsRepository, CollectionRepository, CreatorRepository, ProductRepository } from "@/lib/repositories/contracts";
-import type { AnalyticsDay, AnalyticsProduct, AnalyticsSource, Creator, CreatorAccount, StoreCollection, StoreProduct } from "@/types/store";
+import type { AnalyticsRepository, CollectionRepository, CreatorRepository, ProductRepository, LeadRepository } from "@/lib/repositories/contracts";
+import type { AnalyticsDay, AnalyticsProduct, AnalyticsSource, Creator, CreatorAccount, StoreCollection, StoreProduct, CreatorLead } from "@/types/store";
 
 function requireDb() { if (!db) throw new Error("Firebase is not configured. Add the required Firebase web app environment variables."); return db; }
 function requireOwner(uid: string) { const user = auth?.currentUser; if (!user || user.uid !== uid) throw new Error("Sign in to manage this CreatorStore."); return user; }
@@ -206,5 +206,34 @@ export const firebaseAnalyticsRepository: AnalyticsRepository = {
       totalProducts: products.length, featuredProducts: products.filter((item) => item.featured).length,
       totalCollections: collections.length, daily, topProducts, sources, periodDays: days,
     };
+  },
+};
+
+export const firebaseLeadRepository: LeadRepository = {
+  async list(creatorId) {
+    requireOwner(creatorId);
+    const snaps = await getDocs(query(collection(requireDb(), "creatorLeads"), where("creatorId", "==", creatorId)));
+    return snaps.docs.map((item) => ({ id: item.id, ...item.data() } as CreatorLead)).sort((a, b) => {
+      const at = (a.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
+      const bt = (b.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
+      return bt - at;
+    });
+  },
+  async save(lead) {
+    requireOwner(lead.creatorId);
+    if (!lead.name.trim() || lead.name.length > 80) throw new Error("Enter a name under 80 characters.");
+    if (!lead.contact.trim() || lead.contact.length > 120) throw new Error("Enter an email address, phone number or social handle.");
+    const store = requireDb();
+    const ref = doc(store, "creatorLeads", lead.id);
+    const previous = await getDoc(ref);
+    await setDoc(ref, { ...lead, name: lead.name.trim(), contact: lead.contact.trim(), notes: lead.notes.trim().slice(0, 1000), createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() });
+  },
+  async delete(leadId) {
+    const user = auth?.currentUser;
+    if (!user) throw new Error("Sign in to manage leads.");
+    const ref = doc(requireDb(), "creatorLeads", leadId);
+    const snap = await getDoc(ref);
+    if (!snap.exists() || snap.data().creatorId !== user.uid) throw new Error("Lead not found.");
+    await deleteDoc(ref);
   },
 };
