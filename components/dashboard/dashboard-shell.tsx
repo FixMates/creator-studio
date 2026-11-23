@@ -15,6 +15,7 @@ const nav = [
   { label: "Collections", href: "/dashboard/collections", icon: FolderHeart },
   { label: "Customize store", href: "/dashboard/store", icon: Store },
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { label: "Orders & Leads", href: "/dashboard/leads", icon: CircleUserRound },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
