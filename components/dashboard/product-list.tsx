@@ -32,6 +32,10 @@ export function ProductList() {
     await getProductRepository().save({ ...product, featured: !product.featured });
     await refresh();
   }
+  async function setAvailability(product: StoreProduct, availability: NonNullable<StoreProduct["availability"]>) {
+    await getProductRepository().save({ ...product, availability, active: availability !== "deactivated" });
+    await refresh();
+  }
   async function remove(product: StoreProduct) {
     if (window.confirm(`Delete “${product.name}” from your storefront?`)) {
       await getProductRepository().delete(product.id);
