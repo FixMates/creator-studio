@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Check, ExternalLink, Link2, Search, Share2, ShoppingBag } from "lucide-react";
 import { getCollectionRepository, getCreatorRepository, getProductRepository } from "@/lib/repositories";
 import { copyLink, shareLink } from "@/lib/services/sharing";
-import { trackStoreView, trackWhatsAppClick } from "@/lib/services/analytics";
+import { trackStoreView, trackWhatsAppClick, trackCollectionClick } from "@/lib/services/analytics";
 import type { Creator, StoreCollection, StoreProduct } from "@/types/store";
 import { validateHttpUrl } from "@/lib/services/url";
 
@@ -183,7 +183,7 @@ export function Storefront({ username }: { username: string }) {
           {collections.length > 0 && (
             <nav aria-label="Shop collections" className="mt-5 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button onClick={() => setActiveCollection("all")} className="min-h-9 shrink-0 rounded-full border px-4 text-xs font-semibold" style={activeCollection === "all" ? { background: theme.accent, color: "#fff", borderColor: theme.accent } : { background: "#fff", borderColor: "rgba(0,0,0,.12)" }}>All products</button>
-              {collections.map((collection) => <button key={collection.id} onClick={() => setActiveCollection(collection.id)} className="min-h-9 shrink-0 rounded-full border px-4 text-xs font-semibold" style={activeCollection === collection.id ? { background: theme.accent, color: "#fff", borderColor: theme.accent } : { background: "#fff", borderColor: "rgba(0,0,0,.12)" }}>{collection.title}</button>)}
+              {collections.map((collection) => <button key={collection.id} onClick={() => { setActiveCollection(collection.id); void trackCollectionClick(creator.id, creator.username, collection.id); }} className="min-h-9 shrink-0 rounded-full border px-4 text-xs font-semibold" style={activeCollection === collection.id ? { background: theme.accent, color: "#fff", borderColor: theme.accent } : { background: "#fff", borderColor: "rgba(0,0,0,.12)" }}>{collection.title}</button>)}
             </nav>
           )}
 
