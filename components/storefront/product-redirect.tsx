@@ -50,15 +50,18 @@ export function ProductRedirect({ productId }: { productId: string }) {
       if (data.availability === "coming_soon") { setMessage("This product is coming soon."); return; }
 
       const creatorId = typeof data.creatorId === "string" ? data.creatorId : "";
-      if (creatorId) {
+      const profile = creatorId ? await getDoc(doc(firestore, "creatorProfiles", creatorId)) : null;
+      const actualUsername = profile?.exists() && typeof profile.data().username === "string"
+        ? profile.data().username as string
+        : creatorName ?? "";
+      if (creatorId && actualUsername) {
         await Promise.race([
-          trackProductClick(creatorId, creatorName ?? "", productId),
+          trackProductClick(creatorId, actualUsername, productId),
           new Promise<void>((resolve) => window.setTimeout(resolve, 900)),
         ]);
       }
 
       if (data.redirectType === "internal") {
-        const profile = creatorId ? await getDoc(doc(firestore, "creatorProfiles", creatorId)) : null;
         const socialLinks = profile?.exists() ? profile.data().socialLinks ?? {} : {};
         const rawWhatsApp = typeof socialLinks.whatsapp === "string" ? socialLinks.whatsapp : "";
         const digits = rawWhatsApp.replace(/\D/g, "");
@@ -80,8 +83,8 @@ export function ProductRedirect({ productId }: { productId: string }) {
       const destination = getSafeRedirectUrl(String(data.destinationURL ?? ""));
       if (!destination) { setMessage("This product link isn’t a valid web address."); return; }
       try { sessionStorage.setItem(returnKey, "1"); } catch {}
-      if (data.redirectType === "whatsapp") void trackWhatsAppClick(creatorId, creatorName ?? "", productId);
-      else void trackExternalClick(creatorId, creatorName ?? "", productId, data.redirectType === "website" ? "website" : data.redirectType === "instagram" || data.redirectType === "facebook" ? "social" : "marketplace");
+      if (data.redirectType === "whatsapp") void trackWhatsAppClick(creatorId, actualUsername, productId);
+      else void trackExternalClick(creatorId, actualUsername, productId, data.redirectType === "website" ? "website" : data.redirectType === "instagram" || data.redirectType === "facebook" ? "social" : "marketplace");
       if (!cancelled) window.location.assign(destination);
     }).catch(() => {
       if (!cancelled) setMessage("We couldn’t open that product right now.");
