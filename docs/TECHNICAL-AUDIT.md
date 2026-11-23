@@ -1,14 +1,13 @@
 # Bubbli Technical Audit — Baseline
 
 Branch: `feat/bubbli-product-enhancements`  
-Audited source ref: `main` at `223c45cdda9e1ac419d692473f562f9a467e5aa7`
+Audited source ref: `feat/bubbli-product-enhancements` at `19477e8c336763609e2c3c0aa0cf1bd95e5d6190`
 
 ## Confirmed findings
 
 ### Cloud Functions
-- `functions/src/index.ts` exports `recordCreatorStoreView` and `suspendInactiveCreatorStores`.
-- The scheduled function scans published creator profiles daily and unpublishes profiles based on the 30-day inactivity policy.
-- The user requested removal of inactivity-based unpublishing. Source removal must be followed by a deliberate production decommissioning deployment; that deployment is out of scope here.
+- `functions/src/index.ts` on the feature branch exports `recordCreatorStoreView` only. The inactivity-based scheduled suspension export is absent from branch source.
+- The feature branch does not automatically decommission an already deployed scheduled function. An approved Functions deployment/removal is still required before claiming production decommissioning.
 
 ### Product metadata
 - `lib/services/metadata/extractors.ts` has Amazon, Flipkart and Meesho hostname recognizers, but marketplace extractors return a generic unsupported/manual-entry result.
