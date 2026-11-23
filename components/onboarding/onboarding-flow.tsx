@@ -135,7 +135,7 @@ export function OnboardingFlow() {
       await getCreatorRepository().completeOnboarding(user.uid, user.email ?? "", {
         id: user.uid, username: normalizeUsername(draft.username), displayName: draft.displayName.trim(),
         bio: draft.bio.trim(), avatarUrl: draft.avatarUrl, category: draft.category,
-        socialLinks: draft.socialLinks, published: true,
+        socialLinks: draft.socialLinks, theme: "ananya", published: true,
       });
       if (draftStorageKey) localStorage.removeItem(draftStorageKey);
       router.replace("/dashboard");
