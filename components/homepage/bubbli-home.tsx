@@ -47,9 +47,14 @@ export function BubbliHome() {
   const [menuOpen,setMenuOpen] = useState(false);
   useEffect(() => {
     if (!db) return;
-    void getDocs(query(collection(db,"creatorProfiles"),where("published","==",true),limit(18))).then((snap) => {
-      const live = snap.docs.map((doc) => { const d=doc.data(); return { id:doc.id, name:String(d.displayName??"Creator store"), username:String(d.username??""), category:String(d.category??"Other"), tagline:String(d.bio??"Independent creator store"), image:String(d.coverURL??d.photoURL??""), logo:String(d.photoURL??""), featured:false }; }).filter(s=>s.username);
-      if(live.length) setStores([...live,...demoStores.filter(d=>!live.some(l=>l.username===d.username))]);
+    void Promise.all([
+      getDocs(query(collection(db,"creatorProfiles"),where("published","==",true),limit(18))),
+      getDocs(query(collection(db,"showcaseStores"),limit(12))),
+    ]).then(([profiles, showcase]) => {
+      const live = profiles.docs.map((doc) => { const d=doc.data(); return { id:doc.id, name:String(d.displayName??"Creator store"), username:String(d.username??""), category:String(d.category??"Other"), tagline:String(d.bio??"Independent creator store"), image:String(d.coverURL??d.photoURL??""), logo:String(d.photoURL??""), featured:false }; }).filter(s=>s.username);
+      const curated = showcase.docs.map((doc) => { const d=doc.data(); return { id:doc.id, name:String(d.name??"Featured store"), username:String(d.username??""), category:String(d.category??"Other"), tagline:String(d.tagline??""), image:String(d.coverImage??""), logo:String(d.logoImage??d.logo??"🏪"), featured:d.featured===true }; }).filter(s=>s.username);
+      const combined = [...curated,...live,...demoStores].filter((store,index,all)=>all.findIndex(item=>item.username===store.username)===index);
+      setStores(combined);
     }).catch((error)=>console.error("Could not load public stores",error));
   },[]);
   const visible = useMemo(()=>stores.filter(s=>(category==="All"||s.category.toLowerCase()===category.toLowerCase())&&[s.name,s.category,s.tagline].join(" ").toLowerCase().includes(search.toLowerCase())),[stores,category,search]);
