@@ -189,7 +189,7 @@ export function Storefront({ username }: { username: string }) {
 
           {visibleProducts.length > 0 ? (
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-              {visibleProducts.map((product) => <ProductCard key={product.id} product={product} username={username} accent={theme.accent} />)}
+              {visibleProducts.map((product) => <ProductCard key={product.id} product={product} username={username} creatorId={creator.id} accent={theme.accent} />)}
             </div>
           ) : (
             <div className="mt-5 rounded-2xl border border-dashed border-black/15 bg-white/60 px-5 py-14 text-center">
