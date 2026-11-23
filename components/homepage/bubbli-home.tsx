@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
-import { ArrowRight, Search, ShoppingBag, Store, Layers3, UserRound, Plus, Menu, X, Sparkles, Palette, Box, Users, Percent, Gift, Shirt, Gem, House, Leaf, Scissors, Camera, Gamepad2, Utensils, Smartphone } from "lucide-react";
+import { ArrowRight, Search, ShoppingBag, Store, Layers3, UserRound, Plus, Menu, X, Sparkles, Users, Gift, Shirt, Gem, House, Leaf, Scissors, Camera, Gamepad2, Utensils } from "lucide-react";
 import { db } from "@/lib/firebase/client";
 
 type ShowcaseStore = { id: string; name: string; username: string; category: string; tagline: string; image: string; logo: string; featured?: boolean };
