@@ -11,7 +11,8 @@ import { showcaseStores } from "@/lib/demo/showcase-stores";
 type ShowcaseStore = { id: string; name: string; username: string; category: string; tagline: string; image: string; logo: string; featured?: boolean; productSearchTerms?: string[] };
 const demoStores: ShowcaseStore[] = showcaseStores.map((store) => ({
   id: store.id, name: store.name, username: store.username, category: store.category,
-  tagline: store.tagline, image: store.cover, logo: store.logo,\n  productSearchTerms: store.products.flatMap((product) => [product.name, product.description, product.recommendation]),
+  tagline: store.tagline, image: store.cover, logo: store.logo,
+  productSearchTerms: store.products.flatMap((product) => [product.name, product.description, product.recommendation]),
 }));
 const categories = [
   { name:"Gifting", sub:"Puzzles, Hampers, Custom Gifts", icon:Gift, color:"#bd28dc", bg:"#f8e9fb" },
