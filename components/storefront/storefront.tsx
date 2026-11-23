@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Check, ExternalLink, Link2, Search, Share2, ShoppingBag } from "lucide-react";
 import { getCollectionRepository, getCreatorRepository, getProductRepository } from "@/lib/repositories";
 import { copyLink, shareLink } from "@/lib/services/sharing";
-import { trackStoreView } from "@/lib/services/analytics";
+import { trackStoreView, trackWhatsAppClick } from "@/lib/services/analytics";
 import type { Creator, StoreCollection, StoreProduct } from "@/types/store";
 import { validateHttpUrl } from "@/lib/services/url";
 
@@ -152,7 +152,7 @@ export function Storefront({ username }: { username: string }) {
               <h1 className="mt-2 break-words text-3xl font-semibold tracking-[-.04em] sm:text-5xl">{creator.displayName}</h1>
               {creator.bio && <p className="mt-3 max-w-2xl whitespace-pre-line text-sm leading-6 text-[#6e7068] sm:text-base">{creator.bio}</p>}
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-xs font-semibold text-white" style={{ background: theme.accent }}>Contact on WhatsApp <ArrowUpRight size={14} /></a>}
+                {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => void trackWhatsAppClick(creator.id, creator.username)} className="inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-xs font-semibold text-white" style={{ background: theme.accent }}>Contact on WhatsApp <ArrowUpRight size={14} /></a>}
                 {socials.filter(([key]) => key !== "whatsapp").map(([key, value]) => (
                   <a key={key} href={value} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 text-xs font-semibold capitalize">{key} <ExternalLink size={12} /></a>
                 ))}
@@ -169,7 +169,7 @@ export function Storefront({ username }: { username: string }) {
               <a href="#products" className="text-xs font-semibold underline underline-offset-4">Explore all</a>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-              {featuredProducts.slice(0, 4).map((product) => <ProductCard key={product.id} product={product} username={username} accent={theme.accent} />)}
+              {featuredProducts.slice(0, 4).map((product) => <ProductCard key={product.id} product={product} username={username} creatorId={creator.id} accent={theme.accent} />)}
             </div>
           </section>
         )}
@@ -223,7 +223,7 @@ export function Storefront({ username }: { username: string }) {
   );
 }
 
-function ProductCard({ product, username, accent }: { product: StoreProduct; username: string; accent: string }) {
+function ProductCard({ product, username, creatorId, accent }: { product: StoreProduct; username: string; creatorId: string; accent: string }) {
   const [shared, setShared] = useState(false);
   const productUrl = `/go/${product.id}?u=${encodeURIComponent(username)}`;
   const actionLabel = product.redirectType === "internal" ? "View details" :
