@@ -18,10 +18,23 @@ export const recordCreatorStoreView = onDocumentCreated(
   {document: "analyticsEvents/{eventId}", region: REGION},
   async (event) => {
     const data = event.data?.data();
-    if (!data || data.type !== "store_view" || typeof data.creatorId !== "string" || typeof data.username !== "string") return;
+    if (
+      !data ||
+      data.type !== "store_view" ||
+      typeof data.creatorId !== "string" ||
+      typeof data.username !== "string"
+    ) {
+      return;
+    }
     const profileRef = db.collection("creatorProfiles").doc(data.creatorId);
     const profile = await profileRef.get();
-    if (!profile.exists || profile.get("published") !== true || profile.get("username") !== data.username) return;
+    if (
+      !profile.exists ||
+      profile.get("published") !== true ||
+      profile.get("username") !== data.username
+    ) {
+      return;
+    }
     await db.collection("creatorPrivate").doc(data.creatorId).set({
       lastStoreViewAt: event.data?.createTime ?? FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
