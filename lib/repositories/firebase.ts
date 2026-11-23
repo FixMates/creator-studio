@@ -10,7 +10,7 @@ import type { AnalyticsRepository, CollectionRepository, CreatorRepository, Prod
 import type { AnalyticsDay, AnalyticsProduct, AnalyticsSource, Creator, CreatorAccount, StoreCollection, StoreProduct, CreatorLead, CreatorLead } from "@/types/store";
 
 function requireDb() { if (!db) throw new Error("Firebase is not configured. Add the required Firebase web app environment variables."); return db; }
-function requireOwner(uid: string) { const user = auth?.currentUser; if (!user || user.uid !== uid) throw new Error("Sign in to manage this CreatorStore."); return user; }
+function requireOwner(uid: string) { const user = auth?.currentUser; if (!user || user.uid !== uid) throw new Error("Sign in to manage Bubbli."); return user; }
 function urlHost(value: string) { try { return new URL(value).hostname.replace(/^www\./, ""); } catch { return ""; } }
 function profileFromDoc(data: DocumentData): Creator {
   return { id: String(data.uid), username: String(data.username), displayName: String(data.displayName), bio: String(data.bio ?? ""), avatarUrl: typeof data.photoURL === "string" ? data.photoURL : "", category: data.category, socialLinks: data.socialLinks ?? {}, theme: (["ananya","meera","sundar","minimal","bold","lifestyle"].includes(data.theme) ? data.theme : "ananya") as Creator["theme"], published: data.published === true };
@@ -80,7 +80,7 @@ export const firebaseCreatorRepository: CreatorRepository = {
     const usernameRef = doc(store, "usernames", normalized);
     const [profile, reservation] = await Promise.all([getDoc(profileRef), getDoc(usernameRef)]);
     if (!profile.exists() || profile.data().username !== normalized || !reservation.exists() || reservation.data().uid !== user.uid) throw new Error("Your username is immutable after onboarding. Profile changes weren’t saved.");
-    await updateDoc(profileRef, { displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl ?? "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "gold", published: creator.published, updatedAt: serverTimestamp() });
+    await updateDoc(profileRef, { displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl ?? "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "ananya", published: creator.published, updatedAt: serverTimestamp() });
   },
 };
 
