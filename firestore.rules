@@ -9,6 +9,13 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/creatorProfiles/$(uid)).data.published == true;
     }
 
+    // Public directory content is curated by trusted admins in the Firebase Console.
+    // Visitors can read showcase cards; client-side writes are intentionally blocked.
+    match /showcaseStores/{storeId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
     match /users/{uid} {
       allow get, create, update: if isOwner(uid);
       allow list, delete: if false;
