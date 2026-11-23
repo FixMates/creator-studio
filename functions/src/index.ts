@@ -1,4 +1,4 @@
-import {logger, setGlobalOptions} from "firebase-functions";
+import {setGlobalOptions} from "firebase-functions";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {initializeApp} from "firebase-admin/app";
 import {FieldValue, getFirestore} from "firebase-admin/firestore";
