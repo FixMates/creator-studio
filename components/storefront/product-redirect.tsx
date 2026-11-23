@@ -39,7 +39,9 @@ export function ProductRedirect({ productId }: { productId: string }) {
       if (cancelled) return;
       if (!snap.exists()) { setMessage("We couldn’t find that product."); return; }
       const data = snap.data();
-      if (data.active !== true || data.availability === "deactivated") { setMessage("This product is no longer available."); return; }\n      if (data.availability === "out_of_stock") { setMessage("This product is currently out of stock."); return; }\n      if (data.availability === "coming_soon") { setMessage("This product is coming soon."); return; }
+      if (data.active !== true || data.availability === "deactivated") { setMessage("This product is no longer available."); return; }
+      if (data.availability === "out_of_stock") { setMessage("This product is currently out of stock."); return; }
+      if (data.availability === "coming_soon") { setMessage("This product is coming soon."); return; }
       const destination = getSafeRedirectUrl(String(data.destinationURL ?? ""));
       if (!destination) { setMessage("This product link isn’t a valid web address."); return; }
 
