@@ -13,7 +13,7 @@ function requireDb() { if (!db) throw new Error("Firebase is not configured. Add
 function requireOwner(uid: string) { const user = auth?.currentUser; if (!user || user.uid !== uid) throw new Error("Sign in to manage this CreatorStore."); return user; }
 function urlHost(value: string) { try { return new URL(value).hostname.replace(/^www\./, ""); } catch { return ""; } }
 function profileFromDoc(data: DocumentData): Creator {
-  return { id: String(data.uid), username: String(data.username), displayName: String(data.displayName), bio: String(data.bio ?? ""), avatarUrl: typeof data.photoURL === "string" ? data.photoURL : "", category: data.category, socialLinks: data.socialLinks ?? {}, theme: data.theme ?? "gold", published: data.published === true };
+  return { id: String(data.uid), username: String(data.username), displayName: String(data.displayName), bio: String(data.bio ?? ""), avatarUrl: typeof data.photoURL === "string" ? data.photoURL : "", category: data.category, socialLinks: data.socialLinks ?? {}, theme: data.theme ?? "ananya", published: data.published === true };
 }
 function productFromDoc(snap: QueryDocumentSnapshot<DocumentData>, collectionIds: string[]): StoreProduct {
   const data = snap.data();
@@ -63,7 +63,7 @@ export const firebaseCreatorRepository: CreatorRepository = {
         if (!profile.exists()) throw new Error("Your account setup needs support. Please contact the CreatorStore team.");
         return;
       }
-      const profileData = { uid, username: normalized, displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl || "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "gold", published: creator.published, createdAt: profile.exists() ? profile.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
+      const profileData = { uid, username: normalized, displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl || "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "ananya", published: creator.published, createdAt: profile.exists() ? profile.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
       if (!reservation.exists()) transaction.set(usernameRef, { uid, username: normalized, createdAt: serverTimestamp() });
       if (profile.exists()) transaction.update(profileRef, { ...profileData, createdAt: profile.data().createdAt });
       else transaction.set(profileRef, profileData);
