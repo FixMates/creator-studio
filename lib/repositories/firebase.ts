@@ -13,7 +13,7 @@ function requireDb() { if (!db) throw new Error("Firebase is not configured. Add
 function requireOwner(uid: string) { const user = auth?.currentUser; if (!user || user.uid !== uid) throw new Error("Sign in to manage this CreatorStore."); return user; }
 function urlHost(value: string) { try { return new URL(value).hostname.replace(/^www\./, ""); } catch { return ""; } }
 function profileFromDoc(data: DocumentData): Creator {
-  return { id: String(data.uid), username: String(data.username), displayName: String(data.displayName), bio: String(data.bio ?? ""), avatarUrl: typeof data.photoURL === "string" ? data.photoURL : "", category: data.category, socialLinks: data.socialLinks ?? {}, theme: data.theme ?? "ananya", published: data.published === true };
+  return { id: String(data.uid), username: String(data.username), displayName: String(data.displayName), bio: String(data.bio ?? ""), avatarUrl: typeof data.photoURL === "string" ? data.photoURL : "", category: data.category, socialLinks: data.socialLinks ?? {}, theme: (["ananya","meera","sundar","minimal","bold","lifestyle"].includes(data.theme) ? data.theme : "ananya") as Creator["theme"], published: data.published === true };
 }
 function productFromDoc(snap: QueryDocumentSnapshot<DocumentData>, collectionIds: string[]): StoreProduct {
   const data = snap.data();
