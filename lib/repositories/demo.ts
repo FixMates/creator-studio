@@ -1,8 +1,8 @@
 import { demoCollections, demoCreator, demoProducts } from "@/lib/demo/seed";
-import type { AnalyticsRepository, CollectionRepository, CreatorRepository, ProductRepository } from "@/lib/repositories/contracts";
-import type { Creator, StoreCollection, StoreProduct } from "@/types/store";
+import type { AnalyticsRepository, CollectionRepository, CreatorRepository, ProductRepository, LeadRepository } from "@/lib/repositories/contracts";
+import type { Creator, StoreCollection, StoreProduct, CreatorLead } from "@/types/store";
 
-const KEYS = { creator: "creatorstore:demo:creator", products: "creatorstore:demo:products", collections: "creatorstore:demo:collections" };
+const KEYS = { creator: "creatorstore:demo:creator", products: "creatorstore:demo:products", collections: "bubbli:demo:collections", leads: "bubbli:demo:leads" };
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try { const value = localStorage.getItem(key); return value ? JSON.parse(value) as T : fallback; } catch { return fallback; }
@@ -33,3 +33,9 @@ export const collectionRepository: CollectionRepository = {
   async delete(id) { write(KEYS.collections, read<StoreCollection[]>(KEYS.collections, demoCollections).filter((item) => item.id !== id)); },
 };
 export const analyticsRepository: AnalyticsRepository = { async getSummary() { const products = read<StoreProduct[]>(KEYS.products, demoProducts); return { storeViews: 0, productClicks: 0, totalProducts: products.length, featuredProducts: products.filter((item) => item.featured).length, totalCollections: read<StoreCollection[]>(KEYS.collections, demoCollections).length, daily: [], topProducts: [], sources: [], periodDays: 30 }; } };
+
+export const leadRepository: LeadRepository = {
+  async list() { return read<CreatorLead[]>(KEYS.leads, []); },
+  async save(lead) { const items = read<CreatorLead[]>(KEYS.leads, []); const index = items.findIndex((item) => item.id === lead.id); if (index < 0) items.unshift(lead); else items[index] = lead; write(KEYS.leads, items); },
+  async delete(id) { write(KEYS.leads, read<CreatorLead[]>(KEYS.leads, []).filter((item) => item.id !== id)); },
+};
