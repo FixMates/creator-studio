@@ -8,7 +8,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const styles = {
-  primary: "bg-[#315c4c] text-white hover:bg-[#24483b]",
+  primary: "bg-gradient-to-r from-[#8b22ef] to-[#d52ac0] text-white hover:brightness-105",
   secondary: "border border-[#d9ddd5] bg-white text-[#26362e] hover:bg-[#f5f6f2]",
   ghost: "text-[#52645a] hover:bg-[#f1f3ee]",
 };
