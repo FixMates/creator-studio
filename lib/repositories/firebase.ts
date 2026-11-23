@@ -191,6 +191,10 @@ export const firebaseAnalyticsRepository: AnalyticsRepository = {
     }
     let storeViews = 0;
     let productClicks = 0;
+    let whatsappClicks = 0;
+    let externalClicks = 0;
+    let bannerClicks = 0;
+    let collectionClicks = 0;
     for (const event of recent) {
       const timestamp = event.createdAt?.toMillis?.() ?? (event.createdAt?.seconds ? event.createdAt.seconds * 1000 : 0);
       const date = new Date(timestamp).toISOString().slice(0, 10);
@@ -204,6 +208,14 @@ export const firebaseAnalyticsRepository: AnalyticsRepository = {
         productClicks += 1;
         if (bucket) bucket.clicks += 1;
         if (typeof event.productId === "string") productMap.set(event.productId, (productMap.get(event.productId) ?? 0) + 1);
+      } else if (event.type === "whatsapp_click") {
+        whatsappClicks += 1;
+      } else if (event.type === "external_click") {
+        externalClicks += 1;
+      } else if (event.type === "banner_click") {
+        bannerClicks += 1;
+      } else if (event.type === "collection_click") {
+        collectionClicks += 1;
       }
     }
     const daily: AnalyticsDay[] = [...dailyMap.entries()].map(([date, counts]) => ({ date, ...counts }));
@@ -212,7 +224,7 @@ export const firebaseAnalyticsRepository: AnalyticsRepository = {
       .sort((a, b) => b.clicks - a.clicks);
     const sources: AnalyticsSource[] = [...sourceMap.entries()].map(([source, visits]) => ({ source, visits })).sort((a, b) => b.visits - a.visits).slice(0, 6);
     return {
-      storeViews, productClicks, topProductId: topProducts[0]?.productId,
+      storeViews, productClicks, whatsappClicks, externalClicks, bannerClicks, collectionClicks, topProductId: topProducts[0]?.productId,
       totalProducts: products.length, featuredProducts: products.filter((item) => item.featured).length,
       totalCollections: collections.length, daily, topProducts, sources, periodDays: days,
     };
