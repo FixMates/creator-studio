@@ -6,15 +6,15 @@ export const dynamic = "force-dynamic";
 const MAX_HTML_BYTES = 1_500_000;
 const MAX_REDIRECTS = 5;
 const ALLOWED_HOSTS = [
-  /(^|\\.)flipkart\\.com$/i,
-  /(^|\\.)amazon\\.(?:in|com|co\\.uk|de|fr|it|es|ca|com\\.au|co\\.jp)$/i,
-  /(^|\\.)meesho\\.com$/i,
+  /(^|\.)flipkart\.com$/i,
+  /(^|\.)amazon\.(?:in|com|co\.uk|de|fr|it|es|ca|com\.au|co\.jp)$/i,
+  /(^|\.)meesho\.com$/i,
 ];
 
 function allowedHost(hostname: string) {
-  const host = hostname.toLowerCase().replace(/\\.$/, "");
+  const host = hostname.toLowerCase().replace(/\.$/, "");
   if (!host || host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local")) return false;
-  if (/^(\\d{1,3}\\.){3}\\d{1,3}$/.test(host) || host.includes(":")) return false;
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(host) || host.includes(":")) return false;
   return ALLOWED_HOSTS.some((pattern) => pattern.test(host));
 }
 function decode(value: string) {
@@ -30,9 +30,9 @@ function meta(html: string, key: string) {
   return undefined;
 }
 function structuredProduct(html: string): Record<string, unknown> | undefined {
-  const scripts = html.match(/<script[^>]+type=["']application\\/ld\\+json["'][^>]*>[\\s\\S]*?<\\/script>/gi) ?? [];
+  const scripts = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi) ?? [];
   for (const script of scripts) {
-    const raw = script.replace(/^<[\\s\\S]*?>/, "").replace(/<\\/script>$/i, "").trim();
+    const raw = script.replace(/^<[\s\S]*?>/, "").replace(/<\/script>$/i, "").trim();
     try {
       const parsed: unknown = JSON.parse(raw);
       const entries = Array.isArray(parsed) ? parsed : [parsed];
@@ -100,13 +100,13 @@ export async function POST(request: Request) {
     if (input.protocol !== "https:" || !allowedHost(input.hostname)) return NextResponse.json({status:"manual_required",message:"Automatic preview currently supports Flipkart, Amazon and Meesho product links. Other links can still be added manually."});
     const {html, finalUrl} = await resolvePage(input);
     const product = structuredProduct(html);
-    const title = meta(html,"og:title") || meta(html,"twitter:title") || (typeof product?.name === "string" ? product.name : undefined) || html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1]?.replace(/<[^>]+>/g,"").trim();
+    const title = meta(html,"og:title") || meta(html,"twitter:title") || (typeof product?.name === "string" ? product.name : undefined) || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/<[^>]+>/g,"").trim();
     const description = meta(html,"og:description") || meta(html,"description") || (typeof product?.description === "string" ? product.description : undefined);
     const imageRaw = meta(html,"og:image") || meta(html,"twitter:image") || imageFrom(product?.image);
     let imageUrl: string | undefined;
     if (imageRaw) { try { const parsed = new URL(imageRaw, finalUrl); if (parsed.protocol === "https:") imageUrl = parsed.toString(); } catch { /* Ignore invalid image URLs. */ } }
     if (!title) return NextResponse.json({status:"manual_required",source:new URL(finalUrl).hostname,message:"The marketplace did not expose product details to automatic preview. Your link is saved; add the title, image and price manually."});
-    return NextResponse.json({status:"success",title,description,imageUrl,source:new URL(finalUrl).hostname.replace(/^www\\./,""),resolvedUrl:finalUrl,message:imageUrl?"Product details found. Please review before saving.":"Product title found. Add a product image and price if needed."});
+    return NextResponse.json({status:"success",title,description,imageUrl,source:new URL(finalUrl).hostname.replace(/^www\./,""),resolvedUrl:finalUrl,message:imageUrl?"Product details found. Please review before saving.":"Product title found. Add a product image and price if needed."});
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not preview this product link.";
     return NextResponse.json({status:"manual_required",message});
