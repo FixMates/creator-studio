@@ -7,7 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { ArrowLeft, ArrowUpRight, MessageCircle } from "lucide-react";
 import { db } from "@/lib/firebase/client";
 import { getSafeRedirectUrl } from "@/lib/services/url";
-import { trackProductClick } from "@/lib/services/analytics";
+import { trackProductClick, trackWhatsAppClick, trackExternalClick } from "@/lib/services/analytics";
 
 type InternalProduct = { name:string; description:string; imageURL:string; price:string; recommendation:string; whatsappUrl:string };
 
