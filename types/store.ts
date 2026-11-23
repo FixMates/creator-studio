@@ -10,7 +10,7 @@ export type OnboardingDraft = { displayName: string; username: string; bio: stri
 export type AnalyticsDay = { date: string; views: number; clicks: number };
 export type AnalyticsProduct = { productId: string; name: string; clicks: number };
 export type AnalyticsSource = { source: string; visits: number };
-export type AnalyticsSummary = { storeViews: number; productClicks: number; topProductId?: string; totalProducts?: number; featuredProducts?: number; totalCollections?: number; daily?: AnalyticsDay[]; topProducts?: AnalyticsProduct[]; sources?: AnalyticsSource[]; periodDays?: number };
+export type AnalyticsSummary = { storeViews: number; productClicks: number; whatsappClicks?: number; externalClicks?: number; bannerClicks?: number; collectionClicks?: number; topProductId?: string; totalProducts?: number; featuredProducts?: number; totalCollections?: number; daily?: AnalyticsDay[]; topProducts?: AnalyticsProduct[]; sources?: AnalyticsSource[]; periodDays?: number };
 export type CreatorAccount = { uid: string; email: string; createdAt: unknown; onboardingCompleted: boolean };
 
 export type LeadStatus = "new" | "contacted" | "follow_up" | "converted" | "not_interested";
