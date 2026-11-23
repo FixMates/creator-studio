@@ -7,10 +7,10 @@ Status definitions: **Pending** = not implemented; **In progress** = implementat
 
 | ID | Task | Priority | Status | Verification |
 |---|---|---:|---|---|
-| B01 | Remove inactivity-based automatic suspension from source | P0 | In progress | Function source audit; deployment decommission documented separately |
+| B01 | Remove inactivity-based automatic suspension from source | P0 | Verified in branch source | `functions/src/index.ts` exports only `recordCreatorStoreView`; production decommission still requires an approved Functions deployment |
 | B02 | Secure server-side product URL importer | P0 | Pending | URL, redirect, SSRF and metadata tests |
 | B03 | Implement real product discovery and search | P0 | Pending | Search, filters, pagination and visibility tests |
-| B04 | Track WhatsApp/contact and external destination clicks | P0 | Pending | Analytics event tests and rules validation |
+| B04 | Add WhatsApp/contact, external, banner and collection event writers with matching Firestore validation | P0 | Implemented; tests pending | Source/rules updated; emulator and browser verification not available in this session |
 | B05 | Add Maker / Curator / Hybrid onboarding | P1 | Pending | New and legacy account flow tests |
 | B06 | Improve storefront conversion and product actions | P1 | Pending | Mobile and desktop browser tests |
 | B07 | Improve analytics event schema and reporting | P1 | Pending | Aggregation and event validation tests |
