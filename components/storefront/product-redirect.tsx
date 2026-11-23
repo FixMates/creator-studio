@@ -18,7 +18,7 @@ export function ProductRedirect({ productId }: { productId: string }) {
     setUsername(creatorName);
     if (!db) { setMessage("Store data is unavailable."); return; }
 
-    const returnKey = `creatorstore:return:${productId}`;
+    const returnKey = `bubbli:return:${productId}`;
     const showReturnMessage = () => {
       try {
         if (sessionStorage.getItem(returnKey) === "1") {
@@ -39,7 +39,7 @@ export function ProductRedirect({ productId }: { productId: string }) {
       if (cancelled) return;
       if (!snap.exists()) { setMessage("We couldn’t find that product."); return; }
       const data = snap.data();
-      if (data.active !== true) { setMessage("This product is no longer available."); return; }
+      if (data.active !== true || data.availability === "deactivated") { setMessage("This product is no longer available."); return; }\n      if (data.availability === "out_of_stock") { setMessage("This product is currently out of stock."); return; }\n      if (data.availability === "coming_soon") { setMessage("This product is coming soon."); return; }
       const destination = getSafeRedirectUrl(String(data.destinationURL ?? ""));
       if (!destination) { setMessage("This product link isn’t a valid web address."); return; }
 
@@ -64,12 +64,12 @@ export function ProductRedirect({ productId }: { productId: string }) {
     };
   }, [productId]);
 
-  return <main className="grid min-h-screen place-items-center bg-[#f8f9f5] px-5 text-center">
+  return <main className="grid min-h-screen place-items-center bg-[#faf8ff] px-5 text-center">
     <section className="max-w-sm">
       <p className="eyebrow">Bubbli.in redirect</p>
       <h1 className="mt-3 text-2xl font-semibold" aria-live="polite">{message}</h1>
       <p className="mt-2 text-sm text-[#7b887e]">Your visit is attributed to the creator who shared this recommendation.</p>
-      <Link href={returnTo} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-[#294f3e] px-5 text-sm font-semibold text-white">Back to {username ? `@${username}’s store` : "store"}</Link>
+      <Link href={returnTo} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-[#8b22ef] px-5 text-sm font-semibold text-white">Back to {username ? `@${username}’s store` : "store"}</Link>
     </section>
   </main>;
 }
