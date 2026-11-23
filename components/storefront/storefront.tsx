@@ -18,6 +18,52 @@ const themeStyles = {
   bold: { page: "#190c2c", ink: "#ffffff", accent: "#ec2c9b", card: "#28143d" },
   lifestyle: { page: "#fff8f2", ink: "#34203c", accent: "#b832c5", card: "#ffffff" },
 } as const;
+
+export function Storefront({ username }: { username: string }) {
+  const [creator, setCreator] = useState<Creator | null>(null);
+  const [products, setProducts] = useState<StoreProduct[]>([]);
+  const [collections, setCollections] = useState<StoreCollection[]>([]);
+  const [notice, setNotice] = useState("");
+  const [loadState, setLoadState] = useState<{ username: string; status: "loading" | "loaded" | "failed" }>({ username: "", status: "loading" });
+  const loading = loadState.username !== username || loadState.status === "loading";
+  const loadFailed = loadState.username === username && loadState.status === "failed";
+  const [search, setSearch] = useState("");
+  const [activeCollection, setActiveCollection] = useState<string>("all");
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      let failed = false;
+      try {
+        const profile = await getCreatorRepository().get(username);
+        if (!profile) {
+          if (!cancelled) {
+            setCreator(null);
+            setProducts([]);
+            setCollections([]);
+          }
+          return;
+        }
+        const [publicProducts, publicCollections] = await Promise.all([
+          getProductRepository().listPublic(profile.id),
+          getCollectionRepository().listPublic(profile.id),
+        ]);
+        if (!cancelled) {
+          setCreator(profile);
+          setProducts(publicProducts);
+          setCollections(publicCollections);
+          void trackStoreView(profile.id, profile.username);
+        }
+      } catch (error) {
+        console.error("Failed to load public storefront:", error);
+        failed = true;
+      } finally {
+        if (!cancelled) {
+          setLoadState({ username, status: failed ? "failed" : "loaded" });
+        }
+      }
+    })();
+    return () => { cancelled = true; };
   }, [username]);
 
   const orderedProducts = useMemo(
@@ -41,7 +87,7 @@ const themeStyles = {
   async function share() {
     const url = `${window.location.origin}/${username}`;
     try {
-      const result = await shareLink(url, creator?.displayName ?? "CreatorStore", creator?.bio);
+      const result = await shareLink(url, creator?.displayName ?? "Bubbli", creator?.bio);
       setNotice(result === "copied" ? "Store link copied." : result === "cancelled" ? "Share cancelled." : "Store shared.");
     } catch {
       try { await copyLink(url); setNotice("Store link copied."); }
@@ -170,7 +216,7 @@ const themeStyles = {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
           <p className="text-xs text-[#777a72]">{creator.displayName} · {creator.category}</p>
           <nav className="flex flex-wrap justify-center gap-4 text-[10px] text-[#777a72]"><Link href="/about">About</Link><Link href="/contact">Contact</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/affiliate-disclosure">Affiliate disclosure</Link><a href="mailto:support@bubbli.in">Support</a></nav>
-          <p className="text-[10px] text-[#96988f]">Storefront powered by Bubbli</p>
+          <p className="text-[10px] text-[#96988f]">Your store, powered by Bubbli</p>
         </div>
       </footer>
     </main>
