@@ -7,6 +7,13 @@ const creatorUsername = `bubbli${Date.now().toString().slice(-6)}`;
 
 test.describe.configure({mode: "serial"});
 
+test("homepage renders uploaded data URL logos as images", async ({page}) => {
+  await page.goto("/");
+  const logo = page.getByAltText("E2E Data URL Logo logo");
+  await expect(logo).toBeVisible();
+  await expect(logo).toHaveAttribute("src", /^data:image\/png;base64,/);
+});
+
 test("creator can onboard, add a product, publish and visit the public store", async ({page}) => {
   await page.goto("/signup");
   await page.getByLabel("Your name").fill(creatorName);

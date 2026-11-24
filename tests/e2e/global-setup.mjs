@@ -86,5 +86,18 @@ export default async function globalSetup() {
     }
     await db.collection("creatorPrivate").doc(account.uid).set(privateData);
   }
+  await db.collection("creatorProfiles").doc("e2e-data-logo").set({
+    uid: "e2e-data-logo",
+    username: "e2e-data-logo",
+    displayName: "E2E Data URL Logo",
+    bio: "Homepage logo rendering fixture",
+    photoURL: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pQAAAABJRU5ErkJggg==",
+    category: "Lifestyle",
+    socialLinks: {},
+    theme: "ananya",
+    published: true,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
   await app.delete();
 }
