@@ -51,7 +51,7 @@ export const firebaseCreatorRepository: CreatorRepository = {
     const normalized = normalizeUsername(username);
     if (!isValidUsername(normalized)) return false;
     const snap = await getDoc(doc(requireDb(), "usernames", normalized));
-    return !snap.exists() || (Boolean(uid) && snap.data().uid === uid);
+    return !snap.exists() || (!snap.data().redirectTo && Boolean(uid) && snap.data().uid === uid);
   },
   async completeOnboarding(uid, email, creator, termsVersion) {
     const user = requireOwner(uid);
