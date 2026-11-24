@@ -586,10 +586,6 @@ export const adminConsole = onCall({region: "asia-south1"}, async (request) => {
           {publishedBeforeAccountSuspension: profile.get("published") === true},
           {merge: true},
         );
-        await profileRef.update({
-          published: false,
-          updatedAt: FieldValue.serverTimestamp(),
-        });
       }
       await accountRef.set(
         {
@@ -602,17 +598,10 @@ export const adminConsole = onCall({region: "asia-south1"}, async (request) => {
         {merge: true},
       );
       if (profile.exists) {
-        const privateDoc = await privateRef.get();
         await profileRef.update({
-          published: profile.get("suspendedAt") ? false :
-            privateDoc.get("publishedBeforeAccountSuspension") === true,
+          published: false,
           updatedAt: FieldValue.serverTimestamp(),
         });
-        if (privateDoc.exists) {
-          await privateRef.update({
-            publishedBeforeAccountSuspension: FieldValue.delete(),
-          });
-        }
       }
       if (!userRecord.disabled) {
         await getAuth().updateUser(uid, {disabled: true});
@@ -626,6 +615,21 @@ export const adminConsole = onCall({region: "asia-south1"}, async (request) => {
           "This account is not suspended by Bubbli moderation.",
         );
       }
+      const privateDoc = await privateRef.get();
+      const restoreAuthDisabled =
+        accountData.disabledBeforeAdminSuspension === true;
+      if (userRecord.disabled !== restoreAuthDisabled) {
+        await getAuth().updateUser(uid, {disabled: restoreAuthDisabled});
+      }
+      if (profile.exists) {
+        // Account suspension never clears independent storefront moderation.
+        // Only restore publication when the store itself is not suspended.
+        await profileRef.update({
+          published: profile.get("suspendedAt") ? false :
+            privateDoc.get("publishedBeforeAccountSuspension") === true,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
       await accountRef.set(
         {
           adminSuspended: false,
@@ -635,15 +639,15 @@ export const adminConsole = onCall({region: "asia-south1"}, async (request) => {
         },
         {merge: true},
       );
-      if (
-        accountData.disabledBeforeAdminSuspension !== true &&
-        userRecord.disabled
-      ) {
-        await getAuth().updateUser(uid, {disabled: false});
-      }
       await accountRef.update({
         disabledBeforeAdminSuspension: FieldValue.delete(),
       });
+      const independentlySuspended = Boolean(profile.get("suspendedAt"));
+      if (privateDoc.exists && !independentlySuspended) {
+        await privateRef.update({
+          publishedBeforeAccountSuspension: FieldValue.delete(),
+        });
+      }
       await writeAudit(request.auth.uid, role, "user.restore", uid);
     }
     return {ok: true};
@@ -687,9 +691,16 @@ export const adminConsole = onCall({region: "asia-south1"}, async (request) => {
       }
       const privateDoc = await privateRef.get();
       const account = await db.collection("users").doc(uid).get();
+      const accountPublicationState = privateDoc.get(
+        "publishedBeforeAccountSuspension",
+      );
+      const wasPublishedBeforeAccountSuspension =
+        typeof accountPublicationState === "boolean" ?
+          accountPublicationState :
+          privateDoc.get("publishedBeforeModeration") === true;
       await profileRef.update({
         published: account.get("adminSuspended") === true ? false :
-          privateDoc.get("publishedBeforeModeration") === true,
+          wasPublishedBeforeAccountSuspension,
         suspendedAt: FieldValue.delete(),
         suspensionReason: FieldValue.delete(),
         suspendedBy: FieldValue.delete(),
@@ -697,6 +708,7 @@ export const adminConsole = onCall({region: "asia-south1"}, async (request) => {
       });
       await privateRef.update({
         publishedBeforeModeration: FieldValue.delete(),
+        publishedBeforeAccountSuspension: FieldValue.delete(),
       });
       await writeAudit(request.auth.uid, role, "store.restore", uid);
     }
