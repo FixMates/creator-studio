@@ -16,7 +16,7 @@ export async function imageFileToDataUrl(file: File, size = 900): Promise<string
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
         if (!blob) continue;
         // Firestore rules cap imageURL at 500 KB. Keep headroom for the data-URL prefix.
-        if (blob.size > 440_000) continue;
+        if (blob.size > 350_000) continue;
         return await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onerror = () => reject(new Error("Could not read that image."));
