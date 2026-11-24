@@ -10,11 +10,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(Boolean(auth));
 
   useEffect(() => {
-    if (!auth) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
+    if (!auth) return;
 
     return subscribeToAuthChanges((nextUser) => {
       setUser(nextUser);

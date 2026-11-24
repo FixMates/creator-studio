@@ -11,7 +11,7 @@ import type { StoreProduct } from "@/types/store";
 
 export function ProductList() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(!auth);
   const [error, setError] = useState("");
 
   async function refresh() {
@@ -23,9 +23,8 @@ export function ProductList() {
   }
 
   useEffect(() => {
-    if (!auth) { void refresh(); return; }
-    const unsubscribe = onAuthStateChanged(auth, () => { void refresh(); });
-    return unsubscribe;
+    if (!auth) return;
+    return onAuthStateChanged(auth, (user) => { if (user) void refresh(); });
   }, []);
 
   async function toggleFeatured(product: StoreProduct) {

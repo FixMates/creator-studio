@@ -1,6 +1,6 @@
 import type { StoreProduct } from "@/types/store";
 
-export type ShowcaseCollection = { id: string; title: string; description: string; productIds: string[] };
+export type ShowcaseCollection = { id: string; creatorId: string; title: string; description: string; imageUrl: string; productIds: string[]; order: number };
 export type ShowcaseStore = {
   id: string; name: string; username: string; category: string; tagline: string; bio: string;
   logo: string; cover: string; location: string; since: string;
@@ -22,7 +22,7 @@ const photos = {
   prints: ["photo-1513519245088-0e12902e5a38","photo-1513364776144-60967b0f800f","photo-1579783902614-a3fb3927b6a5","photo-1513519245088-0e12902e5a38","photo-1490312278390-ab64016e0aa9","photo-1513364776144-60967b0f800f","photo-1579783902614-a3fb3927b6a5","photo-1516321318423-f06f85e504b3","photo-1513519245088-0e12902e5a38","photo-1513519245088-0e12902e5a38","photo-1490312278390-ab64016e0aa9","photo-1513364776144-60967b0f800f"],
 };
 
-type ProductSpec = [string, string, string, string];
+type ProductSpec = [name: string, price: string, description: string, recommendation: string];
 function buildProducts(storeId: string, specs: ProductSpec[], images: string[]): StoreProduct[] {
   return specs.map(([name, price, description, recommendation], index) => ({
     id: `${storeId}-item-${index+1}`, creatorId: `showcase-${storeId}`, name, price, currency: "INR",
@@ -34,7 +34,7 @@ function buildProducts(storeId: string, specs: ProductSpec[], images: string[]):
 }
 function makeStore(id:string,name:string,username:string,category:string,tagline:string,bio:string,logo:string,cover:string,location:string,since:string,products:ProductSpec[],images:string[],collections:[string,string][]):ShowcaseStore {
   const items=buildProducts(id,products,images);
-  return {id,name,username,category,tagline,bio,logo,cover:image(cover,1500),location,since,products:items,collections:collections.map(([title,description],i)=>({id:`${id}-${["featured","everyday","specials"][i]}`,title,description,productIds:items.filter(p=>p.collectionIds.includes(`${id}-${["featured","everyday","specials"][i]}`)).map(p=>p.id)}))};
+  return {id,name,username,category,tagline,bio,logo,cover:image(cover,1500),location,since,products:items,collections:collections.map(([title,description],i)=>{const productIds=items.filter(p=>p.collectionIds.includes(`${id}-${["featured","everyday","specials"][i]}`)).map(p=>p.id);return {id:`${id}-${["featured","everyday","specials"][i]}`,creatorId:`showcase-${id}`,title,description,productIds,imageUrl:items.find((product)=>product.id===productIds[0])?.imageUrl??image(cover),order:i};})};
 }
 
 export const showcaseStores: ShowcaseStore[] = [
@@ -72,5 +72,40 @@ makeStore("ugcroom","The UGC Room","theugcroom","UGC & Creator Services","Conten
 ["Starter UGC Video","₹2,499","One 20–30 second vertical product video with a simple hook, product demonstration and call to action.","A practical first asset for testing a new creative angle."],["Product Demo Reel","₹3,499","A concise vertical demonstration showing how a product works in everyday use.","Useful when customers need to see the product in action."],["Unboxing Experience","₹2,999","A natural unboxing concept with first impressions and detail shots.","A good fit for launches and gifting products."],["Voiceover Story Reel","₹3,299","A short-form video built around a scripted voiceover and product visuals.","Useful for explaining a product without a hard-sell tone."],["Three-Hook Ad Bundle","₹5,999","One core video concept delivered with three alternate opening hooks.","Helps test different attention-grabbing angles."],["Lifestyle Product Photos","₹2,799","A set of ten edited lifestyle product photographs for social and web use.","Adds context and texture beyond plain catalogue images."],["Founder Story Video","₹4,499","A founder-led short video introducing the person and purpose behind a brand.","Helps small businesses communicate their story."],["Testimonial-Style UGC","₹3,499","A first-person experience-style concept based on a truthful, brand-approved brief.","Designed to feel conversational; no fabricated customer claims."],["Monthly Content Starter","₹8,999","Four short-form videos planned around a monthly content calendar.","A simple recurring content rhythm for a small brand."],["Product Photography Mini Set","₹1,999","Five clean product photographs with consistent framing and light.","Useful for refreshing product listings."],["Reel Editing Package","₹1,499","Editing for up to three supplied vertical clips with captions and pacing.","For brands that already have footage but need a polished finish."],["Campaign Creative Pack","₹9,999","Three UGC-style videos, five supporting photos and a simple creative direction sheet.","A coordinated set for a product or campaign launch."]
 ],photos.digital,[["UGC Video Packages","Short-form product stories and demonstrations."],["Product Photography","Clean catalogue and lifestyle imagery."],["Brand Campaigns","Bundles for launches and monthly content."]]),
 ];
+
+const additionalProducts: Record<string, { specs: ProductSpec[]; images: string[] }> = {
+  giftzown: { images: photos.gifts, specs: [["Memory Scrapbook Set","₹899","A keepsake scrapbook kit for photographs, notes and small mementos.","A thoughtful way to make a gift personal."],["Personalised Gift Box","₹1,299","A coordinated box concept for a birthday or milestone gift.","A ready-to-style base for a meaningful surprise."],["Handmade Celebration Card Set","₹349","A set of illustrated cards for notes and celebrations.","Keep a few heartfelt messages close at hand."]] },
+  shirthub: { images: photos.shirts, specs: [["Oxford Weekend Shirt","₹1,499","A crisp button-down concept with a relaxed weekend fit.","Easy to wear open over a tee or buttoned for dinner."],["Linen Blend Camp Shirt","₹1,699","A lightweight short-sleeve shirt concept for warm days.","A breezy option for holidays and casual plans."],["Everyday Overshirt","₹1,899","A versatile layering shirt concept with a clean silhouette.","Adds an easy extra layer to a simple outfit."]] },
+  sareesaga: { images: photos.sarees, specs: [["Handloom Festive Saree","₹2,499","A woven-look festive drape concept with a subtle contrast border.","A versatile choice for family celebrations."],["Soft Tissue Occasion Saree","₹3,299","A light occasion-wear concept with a gentle sheen.","Pairs well with simple jewellery for evening events."],["Cotton Saree Care Set","₹399","A fabric-care accessory set concept for saree storage.","A practical finishing touch for a well-kept wardrobe."]] },
+  hourandhand: { images: photos.watches, specs: [["Slim Mesh Dress Watch","₹2,899","A slim-profile watch concept with a fine mesh-style strap.","A polished finishing touch for workwear."],["Everyday Travel Watch Case","₹799","A compact case concept for storing a watch while travelling.","Keeps a favourite timepiece protected on the go."],["Classic Leather Strap","₹599","A replacement strap concept in a warm neutral tone.","Refresh the feel of a familiar watch."]] },
+  crochetnest: { images: photos.crochet, specs: [["Crochet Mini Bouquet","₹499","A small handmade bouquet concept for a desk or shelf.","A cheerful accent that fits almost anywhere."],["Handmade Crochet Pouch","₹549","A soft pouch concept for small everyday essentials.","Useful for organising a bag with a handmade touch."],["Crochet Table Runner","₹1,199","A textured runner concept for a coffee or dining table.","Brings a little craft and warmth to a room."]] },
+  homenest: { images: photos.home, specs: [["Textured Bedside Lamp","₹1,899","A compact bedside lighting concept with a warm, soft glow.","A considered light for reading and winding down."],["Handwoven Cushion Pair","₹1,299","A coordinated cushion-cover concept with tactile texture.","An easy update for a sofa or reading chair."],["Ceramic Planter Duo","₹999","A pair of simple planter concepts for small indoor plants.","Adds a little greenery to a shelf or sunny corner."]] },
+  glowtheory: { images: photos.beauty, specs: [["Daily Lip Care Duo","₹399","A two-piece lip-care set concept for everyday carry.","A simple addition to a desk or travel pouch."],["Gentle Body Wash","₹499","A mild body-wash concept for a straightforward shower routine.","Choose products that suit your skin and follow label directions."],["Soft Cotton Spa Towel Set","₹699","A small towel-set concept for a home self-care routine.","A useful everyday extra for your bathroom shelf."]] },
+  foodcraft: { images: photos.food, specs: [["Coconut Jaggery Bites","₹249","A sweet snack concept inspired by coconut and jaggery.","A small tea-time treat; check the ingredient and allergen label."],["Millet Breakfast Mix","₹329","A breakfast blend concept designed for quick weekday mornings.","A convenient pantry base to customise with fruit or yoghurt."],["Small-Batch Spice Trio","₹499","A coordinated pantry spice set concept for everyday cooking.","A useful gift for someone who enjoys experimenting in the kitchen."]] },
+  pixelstudio: { images: photos.digital, specs: [["Creator Portfolio Template","₹449","An editable portfolio layout concept for presenting selected work.","A polished starting point for sharing projects with clients."],["Product Launch Checklist","₹199","A concise planning checklist concept for a small product launch.","Keep the moving pieces of a launch in one place."],["Social Content Calendar","₹349","A reusable monthly content calendar template concept.","Plan ideas and publishing dates without overcomplicating the workflow."]] },
+  printandframe: { images: photos.prints, specs: [["Square Keepsake Print Set","₹499","A set of square keepsake prints for journals and pinboards.","A simple format for collecting everyday moments."],["Gallery Frame Pair","₹1,199","A coordinated two-frame concept for a small wall display.","Makes it easier to start a personal gallery wall."],["Custom Travel Map Print","₹899","A personalised map-print concept for a memorable destination.","A thoughtful keepsake for a favourite trip."]] },
+  ugcroom: { images: photos.digital, specs: [["Social Ad Hook Pack","₹999","A short-form concept pack with alternate opening lines for a campaign.","Useful for exploring different creative directions."],["Product Story Photo Set","₹2,499","A lifestyle product-photography package concept for a small launch.","Adds context to a product page and social feed."],["Creator Brief & Shot List","₹799","A reusable brief and shot-list concept for a UGC project.","Keeps deliverables, framing and expectations clear."]] },
+};
+
+for (const store of showcaseStores) {
+  const extras = additionalProducts[store.id];
+  if (!extras) continue;
+  const products = buildProducts(store.id, extras.specs, extras.images).map((product, index) => ({
+    ...product,
+    collectionIds: [`${store.id}-specials`],
+    featured: false,
+    order: store.products.length + index,
+  }));
+  store.products.push(...products);
+  const specials = store.collections.find((collection) => collection.id === `${store.id}-specials`);
+  specials?.productIds.push(...products.map((product) => product.id));
+}
+
+const logoFiles: Record<string, string> = {
+  giftzown: "giftzown.svg", shirthub: "thread-form.svg", sareesaga: "varnam.svg", hourandhand: "hour-hand.svg",
+  crochetnest: "loop-knot.svg", homenest: "sunday-habitat.svg", glowtheory: "glow-theory.svg", foodcraft: "good-grain.svg",
+  pixelstudio: "creator-desk.svg", printandframe: "paper-light.svg", ugcroom: "ugc-room.svg",
+};
+for (const store of showcaseStores) store.logo = `/demo-logos/${logoFiles[store.id]}`;
 
 export function getShowcaseStore(id: string) { return showcaseStores.find((store) => store.id === id); }

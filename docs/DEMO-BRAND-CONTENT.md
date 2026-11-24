@@ -40,4 +40,10 @@ Three unique campaign slides per store have not yet been implemented. Recommende
 - Paper & Light: wall art, personal prints, framing inspiration.
 - The UGC Room: creator portfolios, product storytelling, brand content.
 
+## Niche catalogue refresh
+
+Each showcase now includes 15 fully populated illustrative product records across three collections, with a collection cover image, product image, name, description, price label, source, recommendation, display order, featured state, availability and redirect settings. Additional niche-specific entries were added for gifting, fashion, ethnic wear, watches, handmade craft, home, beauty, food, digital products, prints and UGC services.
+
+Each demo identity now has a locally hosted SVG monogram in `public/demo-logos/`. Product imagery remains stock Unsplash photography and is illustrative rather than an exact listing image. Demo pricing and inventory are not verified against a retailer.
+
 Do not generate fake retailer product images, fake testimonials, ratings, sales metrics or seller contact details. Do not use retailer logos as demo-store logos.

@@ -25,17 +25,22 @@ export function DashboardShell({ children, title }: { children: ReactNode; title
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    if (!auth) { setCreator(null); return; }
+    if (!auth) return;
+    let active = true;
+    let request = 0;
     const load = (uid?: string) => {
+      const currentRequest = ++request;
       if (!uid) { setCreator(null); return; }
-      void getCreatorRepository().getForUser(uid).then(setCreator).catch(() => setCreator(null));
+      void getCreatorRepository().getForUser(uid).then((profile) => {
+        if (active && currentRequest === request) setCreator(profile);
+      }).catch(() => {
+        if (active && currentRequest === request) setCreator(null);
+      });
     };
     load(auth.currentUser?.uid);
     const unsubscribe = onAuthStateChanged(auth, (user) => load(user?.uid));
-    return unsubscribe;
+    return () => { active = false; unsubscribe(); };
   }, [pathname]);
-
-  useEffect(() => { setDrawerOpen(false); }, [pathname]);
   const initial = creator?.displayName?.[0]?.toUpperCase() ?? "B";
   const isActive = (href: string) => href === "/dashboard" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 

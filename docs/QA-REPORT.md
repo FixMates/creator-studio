@@ -1,41 +1,36 @@
 # Bubbli QA Report
 
-Status: **Not release-ready.**  
-Branch: `feat/bubbli-product-enhancements`
+Branch: `codex/demo-niche-showcases`
+Target: `FixMates/creator-studio:main` at `79f715b5b71bda8d971a74489d60d2e2b6a414ba`
 
-## Implementation verification
+## Implemented in this release candidate
 
-| Area | Result | Evidence / remaining work |
-|---|---|---|
-| Inactivity suspension source removal | Verified in branch source | Function export absent; remote deployed-function decommission remains separate |
-| Product URL import | Not implemented | Extractors remain manual-only; no secure server fetcher |
-| Homepage search | Partial | Showcase product terms now included; live creator product search remains |
-| WhatsApp/outbound analytics | Implemented; tests pending | Event writers, Firestore validation and store/product wiring updated |
-| Banner/collection analytics | Partial | Writers exist but no UI control wiring |
-| Analytics dashboard | Pending | New event types not aggregated in dashboard |
-| Maker/Curator/Hybrid onboarding | Pending | Model and flow unchanged |
-| Demo storefronts | Partial | 11 showcase stores exist; sample product data is not verified marketplace inventory |
-| Marketplace source register | Honest empty baseline | No genuine listing was verified; no URLs/prices are claimed |
-| Three-slide demo banners | Pending | Not implemented |
-| Storage migration | Pending | Data URL approach remains; Storage rules deny access |
-| Navigation | Partial | 21 routes inventoried; full control/browser testing not run |
-| Firestore security | Source changed; tests pending | Expanded event rules need emulator verification |
+- 11 niche showcase stores with 15 illustrative products and 3 collections each; 11 local SVG brand marks.
+- Authenticated admin console with custom-claim roles, trusted one-time Super Admin bootstrap, audited moderation, user/store/product controls, category/configuration management and internal notes.
+- Server-side store publication validation; onboarding creates a draft and an active product is required before publishing.
+- Firestore rules for owner isolation, creator publication, suspended accounts, maintenance mode, product visibility and protected admin data.
+- Firebase Auth, Firestore and Functions emulator routing; Playwright creator/admin test harness.
 
-## Automated checks
+## Validation
 
-| Check | Result |
+| Check | Current result |
 |---|---|
-| ESLint | Not run — project runtime unavailable |
-| TypeScript | Not run — project runtime unavailable |
-| Production build | Not run — project runtime unavailable |
-| Unit tests | Not run — no test suite configured in package scripts |
-| Firestore Emulator rules tests | Not run |
-| Playwright | Not run |
-| Mobile visual QA | Not run |
-| Browser Back/Forward regression | Not run |
+| App typecheck and ESLint | Pass |
+| Next.js production build | Pass; all 21 routes generated |
+| Cloud Functions lint and build | Pass |
+| Firestore Rules Emulator | Pass; 2 adversarial test groups |
+| Playwright creator/admin E2E | Pass; 3/3 | Emulator-only creator lifecycle, admin search/moderation/audit, and non-admin denial |
+| Showcase image URLs | Pass; 51 unique Unsplash images checked |
+| Web and Functions dependency audits | Previously pass with zero findings; rerun before merge |
+| GitHub CI for this branch | Pending push |
+| Live production smoke test | Not run |
 
-The repository package scripts expose `lint`, `typecheck` and `build`; this session could edit GitHub source but could not install dependencies or execute the project locally. No test is reported as passed without execution.
+## Release blockers and boundaries
 
-## Production safety
+- The live `creatorstore` App Hosting backend is in Firebase project `affiliate-93078`, region `asia-southeast1`, and its Git source remains linked to `Aathiyapp/my-llm`, not `FixMates/creator-studio`. A merge in the requested repository will not trigger that backend's linked-source deployment.
+- Trusted Super Admin bootstrap requires the Firebase secret `BUBBLI_SUPER_ADMIN_UID` to identify the authorized account. No production UID was selected or configured in this workspace. The emulator uses a seeded test-only custom claim.
+- The current admin dashboard provides operational counts and daily activity, but it does not yet include every requested analytics/reporting view or multi-image product galleries/banner campaigns.
+- Demo product descriptions, prices and imagery are illustrative, not verified retailer offers.
+- Storage rules continue to deny access; product/category imagery is stored as bounded data URLs for this release candidate.
 
-No production deployment, production data mutation, branch merge or release was performed. Before production, review and test the Firestore rules changes, run the full build/QA suite, and explicitly decommission any already-deployed inactivity scheduler through an approved Functions deployment.
+Production deployment is not complete. Do not treat this candidate as deployed until the Git source, bootstrap secret and CI/release checks are aligned and verified.

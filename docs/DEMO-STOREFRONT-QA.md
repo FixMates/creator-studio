@@ -1,6 +1,6 @@
 # Demo Storefront QA
 
-Status: **Not yet verified.** There are 11 showcase stores in the current seed file.
+Status: **Catalogue, image URL checks and selected browser QA passed locally.** There are 11 showcase stores with 15 illustrative products and 3 collections each.
 
 For each store, verify:
 - [ ] Store identity and distinct branding
@@ -17,18 +17,20 @@ For each store, verify:
 
 ## Store-by-store status
 
-| Store | Category | Seed identity exists | Real retailer products verified | Three-slide banner | WhatsApp demo | Browser QA |
+| Store | Category | 15 products and collections | Retailer listings verified | Local logo | Browser QA |
 |---|---|---:|---:|---:|---:|---:|
-| GiftzOwn Studio | Gifting | Yes | No | No | No | Pending |
-| Thread & Form | Fashion | Yes | No | No | No | Pending |
-| Varnam Saree House | Sarees & Ethnic Wear | Yes | No | No | No | Pending |
-| Hour & Hand | Watches & Accessories | Yes | No | No | No | Pending |
-| Loop & Knot | Handmade & Craft | Yes | No | No | No | Pending |
-| The Sunday Habitat | Home & Living | Yes | No | No | No | Pending |
-| Glow Theory | Beauty & Personal Care | Yes | No | No | No | Pending |
-| Good Grain Pantry | Food & Beverages | Yes | No | No | No | Pending |
-| The Creator Desk | Digital Products | Yes | No | No | No | Pending |
-| Paper & Light Studio | Photography & Prints | Yes | No | No | No | Pending |
-| The UGC Room | UGC & Creator Services | Yes | No | No | No | Pending |
+| GiftzOwn Studio | Gifting | Yes | No | Yes | Previously browser-checked |
+| Thread & Form | Fashion | Yes | No | Yes | Pending |
+| Varnam Saree House | Sarees & Ethnic Wear | Yes | No | Yes | Pending |
+| Hour & Hand | Watches & Accessories | Yes | No | Yes | Pending |
+| Loop & Knot | Handmade & Craft | Yes | No | Yes | Pending |
+| The Sunday Habitat | Home & Living | Yes | No | Yes | Pending |
+| Glow Theory | Beauty & Personal Care | Yes | No | Yes | Pending |
+| Good Grain Pantry | Food & Beverages | Yes | No | Yes | Previously browser-checked |
+| The Creator Desk | Digital Products | Yes | No | Yes | Pending |
+| Paper & Light Studio | Photography & Prints | Yes | No | Yes | Pending |
+| The UGC Room | UGC & Creator Services | Yes | No | Yes | Pending |
+
+All demo prices and catalogue descriptions are illustrative. Stock Unsplash images provide visual examples and are not represented as exact retailer product photography. No marketplace links, seller contact details or current stock claims are invented. The catalogue validation confirms 15 products per store, 3 collections per store and successful HEAD requests for all 51 unique Unsplash IDs referenced in the seed.
 
 No demo store is marked verified until its individual source register and browser checks are complete.

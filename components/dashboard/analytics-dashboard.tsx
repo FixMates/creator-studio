@@ -14,8 +14,8 @@ const number = (value: number) => value.toLocaleString("en-IN");
 export function AnalyticsDashboard() {
   const [summary, setSummary] = useState<AnalyticsSummary>(empty);
   const [days, setDays] = useState(30);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(Boolean(auth));
+  const [error, setError] = useState(auth ? "" : "Firebase authentication is not configured.");
 
   async function load(period = days) {
     const uid = auth?.currentUser?.uid;
@@ -27,12 +27,14 @@ export function AnalyticsDashboard() {
   }
 
   useEffect(() => {
-    if (!auth) { setLoading(false); setError("Firebase authentication is not configured."); return; }
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) void load(30);
       else { setLoading(false); setError("Sign in to view your analytics."); }
     });
     return unsubscribe;
+  // The initial subscription intentionally loads the default 30-day view once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const daily = summary.daily ?? [];
@@ -61,7 +63,7 @@ export function AnalyticsDashboard() {
     </div>
     <div className="mt-5 grid gap-5 xl:grid-cols-[1.45fr_.85fr]">
       <section className="rounded-2xl border border-[#eee6f7] bg-white p-5 sm:p-6"><div className="flex items-start justify-between"><div><h3 className="font-semibold">Traffic over time</h3><p className="mt-1 text-xs text-[#879188]">Daily views and product clicks · last {days} days</p></div><BarChart3 className="text-[#7e9b82]" size={18}/></div>
-        {daily.some((d)=>d.views||d.clicks)?<><div className="mt-7 flex h-48 items-end gap-1.5 sm:gap-2">{daily.map((d,index)=><div key={d.date} className="group flex min-w-0 flex-1 items-end justify-center gap-[2px]" title={`${d.date}: ${d.views} views, ${d.clicks} clicks`}><div className="w-1/2 rounded-t-sm bg-[#a8c2a9]" style={{height:`${Math.max(d.views?3:0,d.views/maxValue*100)}%`}}/><div className="w-1/2 rounded-t-sm bg-[#8b22ef]" style={{height:`${Math.max(d.clicks?3:0,d.clicks/maxValue*100)}%`}}/></div>)}</div><div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#929b93]"><span>{daily[0]?.date}</span><span>{daily[daily.length-1]?.date}</span></div><div className="mt-4 flex gap-4 text-[11px] text-[#758178]"><span className="inline-flex items-center gap-1.5"><i className="size-2 rounded-sm bg-[#a8c2a9]"/> Store visits</span><span className="inline-flex items-center gap-1.5"><i className="size-2 rounded-sm bg-[#8b22ef]"/> Product clicks</span></div></>:<div className="grid min-h-48 place-items-center text-center"><div><BarChart3 className="mx-auto text-[#a0b2a1]" size={26}/><p className="mt-3 text-sm font-semibold">No traffic recorded yet</p><p className="mt-1 max-w-xs text-xs leading-5 text-[#8a958c]">Share your store link. Visits and product clicks will appear here as people browse.</p></div></div>}
+        {daily.some((d)=>d.views||d.clicks)?<><div className="mt-7 flex h-48 items-end gap-1.5 sm:gap-2">{daily.map((d)=><div key={d.date} className="group flex min-w-0 flex-1 items-end justify-center gap-[2px]" title={`${d.date}: ${d.views} views, ${d.clicks} clicks`}><div className="w-1/2 rounded-t-sm bg-[#a8c2a9]" style={{height:`${Math.max(d.views?3:0,d.views/maxValue*100)}%`}}/><div className="w-1/2 rounded-t-sm bg-[#8b22ef]" style={{height:`${Math.max(d.clicks?3:0,d.clicks/maxValue*100)}%`}}/></div>)}</div><div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#929b93]"><span>{daily[0]?.date}</span><span>{daily[daily.length-1]?.date}</span></div><div className="mt-4 flex gap-4 text-[11px] text-[#758178]"><span className="inline-flex items-center gap-1.5"><i className="size-2 rounded-sm bg-[#a8c2a9]"/> Store visits</span><span className="inline-flex items-center gap-1.5"><i className="size-2 rounded-sm bg-[#8b22ef]"/> Product clicks</span></div></>:<div className="grid min-h-48 place-items-center text-center"><div><BarChart3 className="mx-auto text-[#a0b2a1]" size={26}/><p className="mt-3 text-sm font-semibold">No traffic recorded yet</p><p className="mt-1 max-w-xs text-xs leading-5 text-[#8a958c]">Share your store link. Visits and product clicks will appear here as people browse.</p></div></div>}
       </section>
       <section className="rounded-2xl border border-[#eee6f7] bg-white p-5 sm:p-6"><h3 className="font-semibold">Traffic sources</h3><p className="mt-1 text-xs text-[#879188]">Where store visitors came from</p>{sources.length?<div className="mt-5 space-y-4">{sources.map((source)=>{const width=Math.max(4,source.visits/Math.max(1,sources[0].visits)*100);return <div key={source.source}><div className="mb-1.5 flex justify-between gap-2 text-xs"><span className="truncate text-[#53645a]">{source.source}</span><span className="font-semibold text-[#65776a]">{number(source.visits)}</span></div><div className="h-2 rounded-full bg-[#eff2ed]"><div className="h-2 rounded-full bg-[#86a48a]" style={{width:`${width}%`}}/></div></div>})}</div>:<div className="grid min-h-40 place-items-center text-center text-xs text-[#89948b]">Source breakdown will appear after your first store visits.</div>}</section>
     </div>

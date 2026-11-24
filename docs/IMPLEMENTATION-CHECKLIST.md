@@ -1,35 +1,23 @@
-# Bubbli Product Enhancement Checklist
+# Bubbli Release Checklist
 
-Branch: `feat/bubbli-product-enhancements`  
-Latest audited branch head before this documentation update: `6173b5e2a2efe930380be2196d8d6ed17a357a82`
+Branch: `codex/demo-niche-showcases`
+Base: `FixMates/creator-studio:main` at `79f715b5b71bda8d971a74489d60d2e2b6a414ba`
 
-Status definitions: **Verified** means code and the stated verification passed. **Implemented — tests pending** means code was changed but required automated/browser verification has not run. **Partial** means only a bounded part of the requirement is implemented. **Pending** means not implemented. **Blocked** means safe completion requires an external dependency or runtime capability not available in this work session.
+| Area | Status | Notes |
+|---|---|---|
+| Repository and architecture review | Verified | See `TECHNICAL-AUDIT.md` |
+| Auth hydration and dashboard redirect fix | In target main | Merged PR #12 |
+| Niche demo stores and local brand marks | Implemented | 11 stores, 15 sample products and 3 collections per store |
+| Secure admin console and role claims | Implemented; needs production bootstrap config | Custom claims and callable authorization; no public self-assignment |
+| Moderation, platform configuration and audit log | Implemented; emulator coverage | Server-side writes; immutable client denial |
+| Draft-to-publish creator lifecycle | Implemented; E2E coverage | Requires active product; server validates publication |
+| Firestore rules attack checks | Pass locally | Firebase Rules Emulator, 2 test groups |
+| Creator and admin browser workflows | Pass locally; 3/3 | Uses demo Auth/Firestore/Functions emulators only |
+| App lint/typecheck/build and Functions lint/build | Pass locally | Re-run after final edits |
+| CI workflow | Updated; not yet run remotely | Adds Java, rules tests, Playwright and Firebase CLI |
+| Production App Hosting source alignment | Blocked | `creatorstore` currently links `Aathiyapp/my-llm`; target is `FixMates/creator-studio` |
+| Production Super Admin bootstrap | Blocked | Requires authorized UID in `BUBBLI_SUPER_ADMIN_UID` secret |
+| Production deploy and smoke test | Not performed | Resolve source link and secret before rollout |
+| Remaining requested product scope | Partial | Advanced analytics, reports and multi-image/banner features remain |
 
-| ID | Task | Priority | Status | Verification / limitation |
-|---|---|---:|---|---|
-| B01 | Remove inactivity-based automatic suspension from source | P0 | Verified in branch source | `functions/src/index.ts` contains only `recordCreatorStoreView`; a deployed legacy scheduler still needs approved decommission deployment |
-| B02 | Secure server-side product URL importer | P0 | Pending | Extractors remain manual-only; SSRF-safe server fetcher and redirect resolution not implemented |
-| B03 | Product discovery and search | P0 | Partial | Homepage search now includes sample showcase product names/descriptions/recommendations; it does not yet query/paginate live creator products |
-| B04 | WhatsApp/contact and outbound analytics | P0 | Implemented — tests pending | Added WhatsApp, external, banner and collection event writers; wired store WhatsApp and product outbound redirect events; Firestore rules updated; banner/collection writers not yet wired to controls |
-| B05 | Maker / Curator / Hybrid onboarding | P1 | Pending | No creator type field or onboarding selection in current model |
-| B06 | Storefront conversion improvements | P1 | Partial | Existing public storefront supports search, collections, share and WhatsApp; no three-slide banner or demo-store contact implementation yet |
-| B07 | Analytics reporting | P1 | Partial | Event writers added; dashboard aggregation/reporting for new event types remains unimplemented |
-| B08 | Firebase security review | P0 | Partial | Rules source updated for expanded analytics; emulator validation not run |
-| B09 | Restricted Firebase Storage image uploads | P1 | Pending | Existing image data-URL approach remains; Storage rules deny access |
-| B10 | Full route and navigation audit | P0 | Partial | 21 page routes inventoried; control-by-control and browser history QA not complete |
-| B11 | Fix navigation defects | P0 | Pending | No full browser regression run |
-| B12 | Complete application QA | P0 | Blocked in this session | GitHub source edits possible; repository runtime, dependencies, emulator and browser are unavailable for executing project scripts |
-| D01 | Audit demo stores and separate illustrative data | P0 | Partial | 11 showcase stores identified; source catalogue is static illustrative data and homepage labels showcase content as illustrative |
-| D02 | Genuine marketplace product source register | P0 | Pending | No Amazon/Flipkart/Meesho listing has been verified; sample catalogue must not be presented as genuine listings |
-| D03 | Three branded banner slides per demo store | P1 | Pending | Not implemented |
-| D04 | Distinct demo store identity | P1 | Partial | 11 existing store names, categories, taglines, emoji marks and cover images retained; per-store visual QA not run |
-| D05 | Safe demo WhatsApp actions | P1 | Pending | Demo seller numbers are not configured; must use generic WhatsApp share/contact URL and disclose demo nature |
-| D06 | Genuine multi-image product galleries | P1 | Pending | Existing showcase data does not establish authorized multi-image listing galleries |
-
-## Execution constraints
-
-- Work only on this feature branch.
-- Do not deploy to production, change production Firestore data, or merge to `main`.
-- Do not add payment, checkout, shipping, refund, delivery or settlement features.
-- Never invent marketplace listings, prices, ratings, seller phone numbers or verification results.
-- Do not mark a task complete without its required test evidence.
+The candidate can be reviewed and merged after local/remote checks pass. Production rollout remains blocked by deployment source alignment and bootstrap configuration.

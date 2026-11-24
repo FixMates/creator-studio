@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import type { User } from "firebase/auth";
 import { signInWithEmail, signInWithGoogle, signUpWithEmail } from "@/lib/firebase/auth";
-import { auth, firebaseConfigured } from "@/lib/firebase/client";
+import { firebaseConfigured } from "@/lib/firebase/client";
 import { getCreatorRepository } from "@/lib/repositories";
 import { Button } from "@/components/ui/button";
 
@@ -13,11 +14,16 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [busy, setBusy] = useState(false);
   const isSignup = mode === "signup";
 
-  async function continueToWorkspace(uid: string) {
+  async function continueToWorkspace(user: User) {
+    const token = await user.getIdTokenResult();
+    if (typeof token.claims.platformRole === "string") {
+      router.replace("/admin");
+      return;
+    }
     const repository = getCreatorRepository();
     const [account, profile] = await Promise.all([
-      repository.getAccount(uid),
-      repository.getForUser(uid),
+      repository.getAccount(user.uid),
+      repository.getForUser(user.uid),
     ]);
     router.replace(account?.onboardingCompleted || profile ? "/dashboard" : "/onboarding");
   }
@@ -30,10 +36,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     try {
       if (isSignup) {
         const credential = await signUpWithEmail(String(data.get("email")), String(data.get("password")), String(data.get("name")));
-        await continueToWorkspace(credential.user.uid);
+        await continueToWorkspace(credential.user);
       } else {
         const credential = await signInWithEmail(String(data.get("email")), String(data.get("password")));
-        await continueToWorkspace(credential.user.uid);
+        await continueToWorkspace(credential.user);
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Something went wrong. Please try again.");
@@ -45,7 +51,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     setBusy(true);
     try {
       const credential = await signInWithGoogle();
-      await continueToWorkspace(credential.user.uid);
+      await continueToWorkspace(credential.user);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Google sign-in failed.");
     } finally { setBusy(false); }

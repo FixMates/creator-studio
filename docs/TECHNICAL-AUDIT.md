@@ -1,53 +1,33 @@
 # Bubbli Technical Audit
 
-Branch: `feat/bubbli-product-enhancements`  
-Audited source head: `6173b5e2a2efe930380be2196d8d6ed17a357a82` (before this documentation refresh)
+Audit branch: `codex/demo-niche-showcases`
+Base: `FixMates/creator-studio:main` at `79f715b`
 
-## Confirmed findings
+| Priority | Issue | Root cause | Recommended fix | Status |
+|---|---|---|---|---|
+| High | Dashboard could send a completed creator into onboarding after a Firestore read error | Dashboard gate checked only the account document and treated read failures as onboarding incompletion | Resolve both account and creator profile after Firebase auth hydration; show a retryable verification error on read failure; ignore stale requests | Fixed; creator lifecycle E2E passes in emulators |
+| High | Onboarding could inspect auth before Firebase finished restoring the session | It read `auth.currentUser` during mount rather than waiting for the auth observer | Wait for `onAuthStateChanged` before routing or loading a draft; retain a retry action for account/profile read errors | Fixed; creator lifecycle E2E passes in emulators |
+| Medium | Auth-dependent profile fetches could finish after account/path changes | Async profile lookup did not reject stale results | Sequence and cancel dashboard-shell profile reads | Fixed in this branch |
+| Medium | ESLint rejected initial state updates performed from effects | Existing React effect setup mixed synchronous initialization with subscription/data-load effects | Move stable initial state into state initializers and keep auth-driven updates in observer callbacks | Fixed; app lint passes |
+| Medium | Firebase Functions lint command was incompatible with the locally resolved ESLint 9 | Script passed `--ext`, removed by ESLint 9; the Functions lockfile pins ESLint 8 | Resolve the local Functions ESLint binary and accommodate Windows line endings in the runner | Fixed; Functions lint passes on this Windows workspace |
+| High | Dependency audit reported moderate production advisories in Firebase Admin's dependency tree | The Functions code used Firebase Admin 13.x and vulnerable transitive packages | Upgrade to Firebase Admin 14.5.1, remove unused incompatible test helper, refresh lockfiles and rerun audits | Fixed; both web and Functions audits report zero vulnerabilities |
+| Enhancement | Demo catalogue had 12 products per niche and emoji store marks | Seed data stopped at 12 products and used emoji identifiers | Add 3 fully described illustrative items to each of 11 niche showcases, collection cover images and custom local SVG marks | Implemented and locally validated |
+| Medium | Marketplace source/price verification is unavailable | Existing extractors are manual-entry only and sample catalogues have no traceable retailer listings | Keep demo pricing illustrative and do not imply live retailer stock or synchronisation | Still applicable; intentionally disclosed in previews |
+| Medium | Analytics event coverage is partial | Banner event controls and some aggregation paths are not connected | Complete analytics wiring and validate event ownership with emulator tests | Open |
+| Medium | Storage uploads use data URLs; Firebase Storage rules deny access | No coordinated Storage migration has been implemented | Keep existing data URL path until owner-only upload rules, validation and migration are tested | Open |
+| Low | Public discovery covers stores, not an independently paginated live product index | Homepage combines creator stores and showcase data | Add secure, paginated discovery only if product-level search is required | Open |
+| Critical | Secure administration surface | Custom claims and Admin SDK callable actions on `/admin` | Role-scoped dashboard, moderation, notes, categories/configuration, trusted bootstrap and server audit writer | Implemented; emulator E2E covers search, moderation, audit and denial |
+| Critical | Creator suspension needs backend enforcement | Account/store publication and product visibility are controlled by trusted operations and Firestore rules | Keep owner writes blocked for suspended accounts and public reads hidden for suspended/unpublished stores | Implemented; Firestore adversarial tests pass |
+| High | Creator lifecycle lacked automated end-to-end coverage | No Playwright configuration, seeded test identity or emulator suite existed | Use isolated Auth/Firestore/Functions emulators; test register-through-publish and negative admin access | Implemented; 3 Playwright tests pass |
+| High | App Hosting Git source does not match requested source repository | Firebase backend is linked to `Aathiyapp-my-llm`, while the requested repository is `FixMates/creator-studio` | Align the App Hosting connection before relying on branch pushes for release | Open; deployment source mismatch |
 
-### Cloud Functions
-- The feature branch's `functions/src/index.ts` exports `recordCreatorStoreView` only.
-- The inactivity-based scheduled suspension export is absent from the branch source.
-- Removing the source export does not prove an already deployed scheduled function has been decommissioned. An approved Functions deployment/removal is still required before production decommissioning can be claimed.
+## Confirmed repository state
 
-### Product metadata import
-- `lib/services/metadata/extractors.ts` recognizes Amazon, Flipkart and Meesho hostnames, but all marketplace extractors still return manual-entry/unsupported results.
-- Generic metadata parsing exists in `lib/services/metadata/parsers.ts`, but it does not perform network requests.
-- Product editor stores a validated pasted URL and allows manual completion.
-- A production importer must be server-side and must validate every redirect, DNS/IP destination, response size, content type and timeout. It must not bypass retailer protections. This secure fetch service remains unimplemented.
+- The supplied auth fix `79f715b5b71bda8d971a74489d60d2e2b6a414ba` is now present as the target repository base (merged PR #12).
+- The app contains 21 page routes under `app/` (see `docs/NAVIGATION-AUDIT.md`).
+- Firestore and Storage rules are present. Firestore Rules Emulator tests run through `npm run test:rules`; Storage still denies all client access.
+- No live retailer product URLs, verified prices or seller contact numbers are fabricated for showcase stores.
 
-### Homepage discovery
-- `components/homepage/bubbli-home.tsx` loads a bounded set of published creator profiles and combines them with showcase stores.
-- Homepage search now includes showcase product names, descriptions and recommendation copy as search terms, in addition to store name/category/tagline.
-- This is not yet global live-product discovery. Published creator products are not queried through a secure, paginated discovery index, and product result cards are not yet shown independently.
+## Release boundary
 
-### Analytics
-- `lib/services/analytics.ts` now defines event writers for `store_view`, `product_click`, `whatsapp_click`, `external_click`, `banner_click` and `collection_click`.
-- Store-level WhatsApp and product outbound/WhatsApp redirects call the new writers.
-- `firestore.rules` now allows the expanded event types and checks creator ownership for associated product/collection references.
-- Banner and collection event writers are not yet connected to UI controls.
-- Dashboard aggregation/reporting still needs to consume the new event types. An event write is not a sale.
-
-### Onboarding and data model
-- Onboarding currently asks for identity, category and social links, then previews the store.
-- `types/store.ts` has no Maker / Curator / Hybrid business-type field. Legacy-safe type persistence and dashboard guidance remain pending.
-
-### Images and Storage
-- `lib/services/image.ts` converts uploaded images into WebP data URLs.
-- `storage.rules` denies all access. A Storage migration requires coordinated owner-only upload rules, MIME/size checks, deletion and legacy-data compatibility.
-
-### Demo storefronts
-- `lib/demo/showcase-stores.ts` defines 11 sample showcase stores.
-- Showcase products have sample titles/descriptions/prices and stock Unsplash photography, but no verified Amazon, Flipkart or Meesho product-detail URLs.
-- The product source register intentionally contains zero verified listings. Do not present sample prices as retailer-verified prices.
-- Three-slide banner carousels, product-specific retailer galleries and authorized seller WhatsApp numbers are not established in current demo data.
-
-### Routes
-- 21 Next.js page routes were found under `app/`, including public username stores, demo previews, product redirects, auth, onboarding and dashboard sections.
-- A route inventory is documented in `docs/NAVIGATION-AUDIT.md`; full control-level and browser-history verification remains open.
-
-## Security and release notes
-- Analytics event validation was expanded in `firestore.rules`; Firestore Emulator tests have not been run.
-- Do not weaken rules as a shortcut.
-- No production deployment, production data mutation or merge to `main` has been performed.
-- No claim is made that lint, typecheck, build, emulator or browser tests passed; these checks were not executable in this session.
+No production data writes or deployments have been made. Production rollout is blocked until the Firebase App Hosting Git source is aligned with the requested repository and the authorized Super Admin UID is configured as `BUBBLI_SUPER_ADMIN_UID`.

@@ -67,6 +67,8 @@ node_modules/
 .env*.local
 .next/
 out/
+test-results/
+playwright-report/
 
 # dataconnect generated files
 .dataconnect

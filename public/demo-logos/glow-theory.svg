@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Glow Theory logo">
+  <rect width="240" height="240" rx="56" fill="#f5eaf0"/>
+  <circle cx="120" cy="120" r="91" fill="none" stroke="#8b4d68" stroke-opacity=".23" stroke-width="2"/>
+  <circle cx="120" cy="120" r="78" fill="none" stroke="#8b4d68" stroke-width="1.5"/>
+  <path d="M120 28v16M120 196v16M28 120h16M196 120h16" stroke="#8b4d68" stroke-width="3" stroke-linecap="round"/>
+  <text x="120" y="137" text-anchor="middle" fill="#8b4d68" font-family="Georgia,serif" font-size="48" letter-spacing="-3">GT</text>
+  <circle cx="120" cy="64" r="4" fill="#8b4d68"/>
+</svg>

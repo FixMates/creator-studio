@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowDown, ArrowRight, ArrowUp, FolderHeart, Plus, Trash2 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { auth } from "@/lib/firebase/client";
+import { onAuthStateChanged } from "firebase/auth";
 import { getCollectionRepository, getProductRepository } from "@/lib/repositories";
 import type { StoreCollection, StoreProduct } from "@/types/store";
 
@@ -16,7 +17,7 @@ export function CollectionsPage(){
     try{setError("");const[cs,ps]=await Promise.all([getCollectionRepository().list(uid),getProductRepository().list(uid)]);setItems(cs);setProducts(ps);}
     catch(caught){setError(caught instanceof Error?caught.message:"Could not load your collections.");}
   }
-  useEffect(()=>{void refresh();},[]);
+  useEffect(()=>auth?onAuthStateChanged(auth,(user)=>{if(user)void refresh();}):undefined,[]);
 
   async function save(){
     const uid=auth?.currentUser?.uid;if(!uid||!title.trim())return;

@@ -169,7 +169,7 @@ export function Storefront({ username }: { username: string }) {
               <a href="#products" className="text-xs font-semibold underline underline-offset-4">Explore all</a>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-              {featuredProducts.slice(0, 4).map((product) => <ProductCard key={product.id} product={product} username={username} creatorId={creator.id} accent={theme.accent} />)}
+              {featuredProducts.slice(0, 4).map((product) => <ProductCard key={product.id} product={product} username={username} accent={theme.accent} />)}
             </div>
           </section>
         )}
@@ -189,7 +189,7 @@ export function Storefront({ username }: { username: string }) {
 
           {visibleProducts.length > 0 ? (
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-              {visibleProducts.map((product) => <ProductCard key={product.id} product={product} username={username} creatorId={creator.id} accent={theme.accent} />)}
+              {visibleProducts.map((product) => <ProductCard key={product.id} product={product} username={username} accent={theme.accent} />)}
             </div>
           ) : (
             <div className="mt-5 rounded-2xl border border-dashed border-black/15 bg-white/60 px-5 py-14 text-center">
@@ -223,7 +223,7 @@ export function Storefront({ username }: { username: string }) {
   );
 }
 
-function ProductCard({ product, username, creatorId, accent }: { product: StoreProduct; username: string; creatorId: string; accent: string }) {
+function ProductCard({ product, username, accent }: { product: StoreProduct; username: string; accent: string }) {
   const [shared, setShared] = useState(false);
   const productUrl = `/go/${product.id}?u=${encodeURIComponent(username)}`;
   const actionLabel = product.redirectType === "internal" ? "View details" :

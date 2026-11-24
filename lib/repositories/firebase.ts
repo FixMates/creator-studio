@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, writeBatch,
+  collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, setDoc, where, writeBatch,
   type DocumentData, type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
@@ -17,7 +17,7 @@ function profileFromDoc(data: DocumentData): Creator {
 }
 function productFromDoc(snap: QueryDocumentSnapshot<DocumentData>, collectionIds: string[]): StoreProduct {
   const data = snap.data();
-  return { id: snap.id, creatorId: String(data.creatorId), name: String(data.title), description: String(data.description ?? ""), imageUrl: String(data.imageURL ?? ""), destinationUrl: String(data.destinationURL), redirectType: data.redirectType, price: typeof data.displayPrice === "string" ? data.displayPrice : undefined, currency: typeof data.currency === "string" ? data.currency : "INR", source: String(data.source ?? ""), recommendation: String(data.recommendation ?? ""), reviewUrl: typeof data.reviewURL === "string" ? data.reviewURL : undefined, reviewType: data.reviewType, featured: data.featured === true, active: data.active !== false, availability: data.availability ?? (data.active === false ? "deactivated" : "active"), clicks: 0, collectionIds, order: Number(data.sortOrder ?? 0) };
+  return { id: snap.id, creatorId: String(data.creatorId), name: String(data.title), description: String(data.description ?? ""), imageUrl: String(data.imageURL ?? ""), destinationUrl: String(data.destinationURL), redirectType: data.redirectType, price: typeof data.displayPrice === "string" ? data.displayPrice : undefined, currency: typeof data.currency === "string" ? data.currency : "INR", source: String(data.source ?? ""), recommendation: String(data.recommendation ?? ""), reviewUrl: typeof data.reviewURL === "string" ? data.reviewURL : undefined, reviewType: data.reviewType, category: typeof data.category === "string" ? data.category : undefined, featured: data.featured === true, active: data.active !== false, availability: data.availability ?? (data.active === false ? "deactivated" : "active"), clicks: 0, collectionIds, order: Number(data.sortOrder ?? 0) };
 }
 function collectionFromDoc(snap: QueryDocumentSnapshot<DocumentData>): StoreCollection {
   const data = snap.data();
@@ -167,7 +167,7 @@ export const firebaseProductRepository: ProductRepository = {
     const store = requireDb();
     const ref = doc(store, "products", product.id);
     const previous = await getDoc(ref);
-    const data = { id: product.id, creatorId: product.creatorId, title: product.name.trim(), description: product.description.trim(), imageURL: product.imageUrl, displayPrice: product.price ?? "", currency: product.currency ?? "INR", destinationURL, redirectType: product.redirectType ?? "website", source: product.source.trim(), sourceDomain: destinationURL ? urlHost(destinationURL) : "", reviewURL: product.reviewUrl ?? "", reviewType: product.reviewType ?? (product.reviewUrl ? "external" : ""), recommendation: product.recommendation.trim(), featured: product.featured, active: (product.availability ?? (product.active === false ? "deactivated" : "active")) !== "deactivated", availability: product.availability ?? (product.active === false ? "deactivated" : "active"), sortOrder: product.order, createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
+    const data = { id: product.id, creatorId: product.creatorId, title: product.name.trim(), description: product.description.trim(), imageURL: product.imageUrl, displayPrice: product.price ?? "", currency: product.currency ?? "INR", destinationURL, redirectType: product.redirectType ?? "website", source: product.source.trim(), sourceDomain: destinationURL ? urlHost(destinationURL) : "", reviewURL: product.reviewUrl ?? "", reviewType: product.reviewType ?? (product.reviewUrl ? "external" : ""), recommendation: product.recommendation.trim(), category: product.category ?? "", featured: product.featured, active: (product.availability ?? (product.active === false ? "deactivated" : "active")) !== "deactivated", availability: product.availability ?? (product.active === false ? "deactivated" : "active"), sortOrder: product.order, createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
     await setDoc(ref, data);
   },
   async delete(productId) {

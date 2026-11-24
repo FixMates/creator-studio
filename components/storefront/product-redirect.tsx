@@ -21,6 +21,8 @@ export function ProductRedirect({ productId }: { productId: string }) {
   useEffect(() => {
     const requestedUsername = new URLSearchParams(window.location.search).get("u")?.trim() || "";
     const creatorName = /^[a-z0-9_-]{3,30}$/i.test(requestedUsername) ? requestedUsername : null;
+    // The URL query is only available in the browser after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUsername(creatorName);
     const firestore = db;
     if (!firestore) { setMessage("Store data is unavailable."); return; }

@@ -4,9 +4,25 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function platformInMaintenance() {
+      return exists(/databases/$(database)/documents/platformConfig/public)
+        && get(/databases/$(database)/documents/platformConfig/public).data.get("maintenanceMode", false) == true;
+    }
+    function activeOwner(uid) {
+      return isOwner(uid)
+        && !platformInMaintenance()
+        && (!exists(/databases/$(database)/documents/users/$(uid))
+          || get(/databases/$(database)/documents/users/$(uid)).data.get("adminSuspended", false) != true);
+    }
     function creatorIsPublished(uid) {
       return exists(/databases/$(database)/documents/creatorProfiles/$(uid))
-        && get(/databases/$(database)/documents/creatorProfiles/$(uid)).data.published == true;
+        && publicProfile(get(/databases/$(database)/documents/creatorProfiles/$(uid)).data);
+    }
+    function publicProfile(data) {
+      return data.keys().hasAll(["published"])
+        && data.published == true
+        && (!data.keys().hasAny(["suspendedAt"]) || data.suspendedAt == null)
+        && !platformInMaintenance();
     }
     function validOptionalLink(links, key) {
       return !(key in links) || (links[key] is string && links[key].size() <= 2048);
@@ -48,7 +64,8 @@ service cloud.firestore {
         && data.recommendation is string && data.recommendation.size() <= 1000
         && data.featured is bool && data.active is bool
         && data.availability in ["active", "deactivated", "out_of_stock", "coming_soon"]
-        && data.sortOrder is int;
+        && data.sortOrder is int
+        && (!data.keys().hasAny(["category"]) || (data.category is string && data.category.size() <= 80));
     }
     function validLead(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() <= 80
@@ -93,17 +110,17 @@ service cloud.firestore {
     }
 
     match /creatorProfiles/{uid} {
-      allow get: if isOwner(uid) || resource.data.published == true;
-      allow list: if resource.data.published == true;
-      allow create: if isOwner(uid)
+      allow get: if isOwner(uid) || creatorIsPublished(uid);
+      allow list: if publicProfile(resource.data);
+      allow create: if activeOwner(uid)
         && request.resource.data.keys().hasOnly(["uid", "username", "displayName", "bio", "photoURL", "category", "socialLinks", "theme", "published", "createdAt", "updatedAt"])
         && request.resource.data.uid == uid
         && existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username))
         && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid
         && validProfile(request.resource.data);
-      allow update: if isOwner(uid)
+      allow update: if activeOwner(uid)
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["username", "displayName", "bio", "photoURL", "category", "socialLinks", "theme", "published", "updatedAt"])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["username", "displayName", "bio", "photoURL", "category", "socialLinks", "theme", "updatedAt"])
         && (request.resource.data.username == resource.data.username
           || (existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username))
             && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == request.auth.uid
@@ -145,21 +162,21 @@ service cloud.firestore {
     match /products/{productId} {
       allow get: if (signedIn() && !exists(/databases/$(database)/documents/products/$(productId)))
         || isOwner(resource.data.creatorId)
-        || (resource.data.active == true && creatorIsPublished(resource.data.creatorId));
+        || (resource.data.active == true && resource.data.get("hiddenFromPublic", false) != true && creatorIsPublished(resource.data.creatorId));
       allow list: if isOwner(resource.data.creatorId)
-        || (resource.data.active == true && creatorIsPublished(resource.data.creatorId));
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(["id", "creatorId", "title", "description", "imageURL", "displayPrice", "currency", "destinationURL", "redirectType", "source", "sourceDomain", "reviewURL", "reviewType", "recommendation", "featured", "active", "availability", "sortOrder", "createdAt", "updatedAt"])
+        || (resource.data.active == true && resource.data.get("hiddenFromPublic", false) != true && creatorIsPublished(resource.data.creatorId));
+      allow create: if activeOwner(request.auth.uid)
+        && request.resource.data.keys().hasOnly(["id", "creatorId", "title", "description", "imageURL", "displayPrice", "currency", "destinationURL", "redirectType", "source", "sourceDomain", "reviewURL", "reviewType", "recommendation", "featured", "active", "availability", "sortOrder", "createdAt", "updatedAt", "category"])
         && request.resource.data.id == productId
         && request.resource.data.creatorId == request.auth.uid
         && validProduct(request.resource.data);
-      allow update: if isOwner(resource.data.creatorId)
+      allow update: if activeOwner(resource.data.creatorId)
         && request.resource.data.creatorId == resource.data.creatorId
         && request.resource.data.id == resource.data.id
         && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["title", "description", "imageURL", "displayPrice", "currency", "destinationURL", "redirectType", "source", "sourceDomain", "reviewURL", "reviewType", "recommendation", "featured", "active", "availability", "sortOrder", "updatedAt"])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["title", "description", "imageURL", "displayPrice", "currency", "destinationURL", "redirectType", "source", "sourceDomain", "reviewURL", "reviewType", "recommendation", "featured", "active", "availability", "sortOrder", "updatedAt", "category"])
         && validProduct(request.resource.data);
-      allow delete: if isOwner(resource.data.creatorId);
+      allow delete: if activeOwner(resource.data.creatorId);
     }
 
     match /collections/{collectionId} {
@@ -168,7 +185,7 @@ service cloud.firestore {
         || creatorIsPublished(resource.data.creatorId);
       allow list: if isOwner(resource.data.creatorId)
         || creatorIsPublished(resource.data.creatorId);
-      allow create: if signedIn()
+      allow create: if activeOwner(request.auth.uid)
         && request.resource.data.keys().hasOnly(["id", "creatorId", "name", "description", "imageURL", "productIds", "sortOrder", "createdAt", "updatedAt"])
         && request.resource.data.id == collectionId
         && request.resource.data.creatorId == request.auth.uid
@@ -177,7 +194,7 @@ service cloud.firestore {
         && request.resource.data.imageURL is string && request.resource.data.imageURL.size() <= 500000
         && request.resource.data.productIds is list && request.resource.data.productIds.size() <= 30
         && request.resource.data.sortOrder is int;
-      allow update: if isOwner(resource.data.creatorId)
+      allow update: if activeOwner(resource.data.creatorId)
         && request.resource.data.creatorId == resource.data.creatorId
         && request.resource.data.id == resource.data.id
         && request.resource.data.createdAt == resource.data.createdAt
@@ -187,7 +204,7 @@ service cloud.firestore {
         && request.resource.data.imageURL is string && request.resource.data.imageURL.size() <= 500000
         && request.resource.data.productIds is list && request.resource.data.productIds.size() <= 30
         && request.resource.data.sortOrder is int;
-      allow delete: if isOwner(resource.data.creatorId);
+      allow delete: if activeOwner(resource.data.creatorId);
     }
 
     match /analyticsEvents/{eventId} {
@@ -256,6 +273,21 @@ service cloud.firestore {
         && validLead(request.resource.data)
         && request.resource.data.updatedAt == request.time;
       allow delete: if signedIn() && resource.data.creatorId == request.auth.uid;
+    }
+
+    // These platform collections are only read or modified through trusted
+    // callable Functions. Admin SDK writes bypass client rules; audit history
+    // has no client mutation path by design.
+    match /adminSystem/{docId} { allow read, write: if false; }
+    match /adminAuditLogs/{logId} { allow read, write: if false; }
+    match /adminNotes/{noteId} { allow read, write: if false; }
+    match /platformConfig/{docId} {
+      allow get: if docId == "public";
+      allow list, write: if false;
+    }
+    match /platformCategories/{categoryId} {
+      allow get, list: if resource.data.active == true;
+      allow create, update, delete: if false;
     }
   }
 }

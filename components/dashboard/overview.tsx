@@ -13,10 +13,10 @@ export function Overview() {
   const [summary, setSummary] = useState<AnalyticsSummary>({ storeViews: 0, productClicks: 0 });
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [creator, setCreator] = useState<Creator | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(auth));
 
   useEffect(() => {
-    if (!auth) { setLoading(false); return; }
+    if (!auth) return;
     let cancelled = false;
     const load = async (uid: string) => {
       setLoading(true);

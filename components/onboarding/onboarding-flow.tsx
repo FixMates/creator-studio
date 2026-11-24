@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, Link2, Plus, Upload } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase/client";
 import { getCreatorRepository } from "@/lib/repositories";
@@ -32,22 +33,24 @@ export function OnboardingFlow() {
   const [saving, setSaving] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [hydratedUid, setHydratedUid] = useState("");
+  const [verificationAttempt, setVerificationAttempt] = useState(0);
+  const [verificationFailed, setVerificationFailed] = useState(false);
   const userUid = auth?.currentUser?.uid ?? "";
   const draftStorageKey = userUid ? `bubbli:onboarding:draft:${userUid}` : "";
   const hydrated = Boolean(userUid && hydratedUid === userUid);
 
   useEffect(() => {
     let cancelled = false;
-    const user = auth?.currentUser;
-    setHydratedUid("");
-    if (!user) {
+    if (!auth) {
       router.replace("/login");
       return () => { cancelled = true; };
     }
-    const uid = user.uid;
-    const displayName = user.displayName ?? "";
 
-    async function prepareAccountDraft() {
+    async function prepareAccountDraft(user: User) {
+      const uid = user.uid;
+      const displayName = user.displayName ?? "";
+      setHydratedUid("");
+      setVerificationFailed(false);
       try {
         const repository = getCreatorRepository();
         const [account, profile] = await Promise.all([
@@ -62,6 +65,7 @@ export function OnboardingFlow() {
       } catch (caught) {
         if (!cancelled) {
           setError(caught instanceof Error ? caught.message : "Could not verify your account.");
+          setVerificationFailed(true);
           setDraft({ ...initial, displayName: displayName });
           setHydratedUid(uid);
         }
@@ -79,9 +83,12 @@ export function OnboardingFlow() {
       setHydratedUid(uid);
     }
 
-    void prepareAccountDraft();
-    return () => { cancelled = true; };
-  }, [router]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) { router.replace("/login"); return; }
+      void prepareAccountDraft(user);
+    });
+    return () => { cancelled = true; unsubscribe(); };
+  }, [router, verificationAttempt]);
 
   useEffect(() => {
     if (hydrated && draftStorageKey) {
@@ -137,7 +144,7 @@ export function OnboardingFlow() {
       await getCreatorRepository().completeOnboarding(user.uid, user.email ?? "", {
         id: user.uid, username: normalizeUsername(draft.username), displayName: draft.displayName.trim(),
         bio: draft.bio.trim(), avatarUrl: draft.avatarUrl, category: draft.category,
-        socialLinks: draft.socialLinks, theme: "ananya", published: true,
+        socialLinks: draft.socialLinks, theme: "ananya", published: false,
       }, "2026-11-23");
       if (draftStorageKey) localStorage.removeItem(draftStorageKey);
       router.replace("/dashboard");
@@ -155,9 +162,9 @@ export function OnboardingFlow() {
       {step===0 && <div className="space-y-5"><div className="flex items-center gap-4"><label className="relative grid size-[76px] cursor-pointer place-items-center overflow-hidden rounded-full border border-dashed border-[#c9d4c9] bg-[#f4f7f2] text-[#6e8974]">{draft.avatarUrl ? <span className="absolute inset-0 bg-cover bg-center" style={{backgroundImage:`url(${draft.avatarUrl})`}}/> : <Upload size={20}/>}<input className="sr-only" type="file" accept="image/*" onChange={photoChanged}/></label><div><p className="text-sm font-semibold">Add a profile photo</p><p className="mt-1 text-xs text-[#89948a]">Optional · best kept small for now</p></div></div><label className="field-label">Display name<input className="field-input" maxLength={60} value={draft.displayName} onChange={(e)=>patch({displayName:e.target.value})}/></label><label className="field-label">Your username<input className="field-input lowercase" placeholder="sundarpicks" value={draft.username} onChange={(e)=>patch({username:normalizeUsername(e.target.value)})}/><span className="mt-1.5 block text-xs text-[#929b93]">{usernameStatus}</span></label><label className="field-label">A little about you<textarea className="field-input min-h-24 resize-y" maxLength={180} value={draft.bio} onChange={(e)=>patch({bio:e.target.value})}/></label></div>}
       {step===1 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{categories.map((item)=><button key={item} type="button" onClick={()=>patch({category:item})} className={`rounded-2xl border p-4 text-left text-sm font-semibold ${draft.category===item ? "border-[#b88be9] bg-[#f8f0ff] text-[#7d22cb]" : "border-[#eee6f7]"}`}>{item}{draft.category===item && <Check size={15} className="float-right"/>}</button>)}</div>}
       {step===2 && <div className="space-y-4"><p className="text-sm text-[#7e8980]">Everything here is optional.</p>{socials.map(({key,label,placeholder})=><label className="field-label" key={key}><span className="inline-flex items-center gap-2"><Link2 size={14}/>{label}</span><input className="field-input" type="url" placeholder={placeholder} value={draft.socialLinks[key] ?? ""} onChange={(e)=>setSocial(key,e.target.value)}/></label>)}</div>}
-      {step===3 && <div className="mx-auto max-w-md rounded-3xl bg-[#faf8ff] px-5 py-7 text-center"><div className="mx-auto grid size-20 place-items-center overflow-hidden rounded-full bg-[#e2e9df] font-serif text-3xl italic text-[#4f7359]">{draft.avatarUrl ? <span className="h-full w-full bg-cover bg-center" style={{backgroundImage:`url(${draft.avatarUrl})`}}/> : draft.displayName[0]?.toUpperCase()}</div><h3 className="mt-4 text-xl font-semibold">{draft.displayName}</h3><p className="mt-1 text-xs text-[#799080]">@{draft.username} · {draft.category}</p><p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[#738077]">{draft.bio || "A little space for the things you love to recommend."}</p><div className="mt-6 rounded-2xl border border-dashed border-[#d3dcd1] bg-white px-5 py-8"><Plus className="mx-auto text-[#8b22ef]"/><p className="mt-3 text-sm font-semibold">Your store is ready!</p><p className="mt-1 text-xs text-[#8b958d]">Publish now, then start adding recommendations.</p></div></div>}
+      {step===3 && <div className="mx-auto max-w-md rounded-3xl bg-[#faf8ff] px-5 py-7 text-center"><div className="mx-auto grid size-20 place-items-center overflow-hidden rounded-full bg-[#e2e9df] font-serif text-3xl italic text-[#4f7359]">{draft.avatarUrl ? <span className="h-full w-full bg-cover bg-center" style={{backgroundImage:`url(${draft.avatarUrl})`}}/> : draft.displayName[0]?.toUpperCase()}</div><h3 className="mt-4 text-xl font-semibold">{draft.displayName}</h3><p className="mt-1 text-xs text-[#799080]">@{draft.username} · {draft.category}</p><p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[#738077]">{draft.bio || "A little space for the things you love to recommend."}</p><div className="mt-6 rounded-2xl border border-dashed border-[#d3dcd1] bg-white px-5 py-8"><Plus className="mx-auto text-[#8b22ef]"/><p className="mt-3 text-sm font-semibold">Your store details are ready</p><p className="mt-1 text-xs text-[#8b958d]">Create your draft, add at least one product, then publish it from My store.</p></div></div>}
       {step===3 && <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#e9ddf4] bg-white p-4 text-left"><input type="checkbox" checked={acceptedTerms} onChange={(event)=>setAcceptedTerms(event.target.checked)} className="mt-1 size-4 accent-[#8b22ef]"/><span className="text-xs leading-5 text-[#6f607f]">I agree to Bubbli’s <Link href="/terms" target="_blank" className="font-bold text-[#7b35bc] underline">Terms of Service</Link> and <Link href="/privacy" target="_blank" className="font-bold text-[#7b35bc] underline">Privacy Policy</Link>. I understand that a store with no recorded views for 30 consecutive days may be unpublished and that reactivation requires contacting support.</span></label>}
-      {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      <div className="mt-8 flex items-center justify-between border-t border-[#edf0eb] pt-5"><Button variant="ghost" disabled={step===0 || saving} onClick={()=>setStep((value)=>Math.max(0,value-1))}><ArrowLeft size={15}/> Back</Button>{step<3 ? <Button onClick={()=>void next()} disabled={checking}>{checking ? "Checking…" : <>Continue <ArrowRight size={15}/></>}</Button> : <Button onClick={()=>void publishStore()} disabled={saving||!acceptedTerms}>{saving ? "Creating your store…" : <>Publish store <Check size={15}/></>}</Button>}</div>
+      {error && <div role="alert" className="mt-5 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700"><p>{error}</p>{verificationFailed && <button type="button" onClick={() => setVerificationAttempt((value) => value + 1)} className="mt-2 font-semibold underline">Retry account check</button>}</div>}
+      <div className="mt-8 flex items-center justify-between border-t border-[#edf0eb] pt-5"><Button variant="ghost" disabled={step===0 || saving} onClick={()=>setStep((value)=>Math.max(0,value-1))}><ArrowLeft size={15}/> Back</Button>{step<3 ? <Button onClick={()=>void next()} disabled={checking}>{checking ? "Checking…" : <>Continue <ArrowRight size={15}/></>}</Button> : <Button onClick={()=>void publishStore()} disabled={saving||!acceptedTerms}>{saving ? "Creating your draft…" : <>Create store draft <Check size={15}/></>}</Button>}</div>
     </section></div></div></main>;
 }
