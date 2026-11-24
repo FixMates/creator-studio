@@ -29,11 +29,18 @@ export const firebaseCreatorRepository: CreatorRepository = {
     const normalized = normalizeUsername(username);
     if (!isValidUsername(normalized)) return null;
     const store = requireDb();
-    const alias = await getDoc(doc(store, "usernameRedirects", normalized));
-    const redirectTo = alias.exists() && typeof alias.data().redirectTo === "string"
-      ? normalizeUsername(alias.data().redirectTo)
-      : "";
-    const lookupUsername = redirectTo && isValidUsername(redirectTo) ? redirectTo : normalized;
+    let lookupUsername = normalized;
+    const visited = new Set<string>([normalized]);
+    // Follow a short redirect chain so links keep working after multiple username changes.
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const alias = await getDoc(doc(store, "usernameRedirects", lookupUsername));
+      const target = alias.exists() && typeof alias.data().redirectTo === "string"
+        ? normalizeUsername(alias.data().redirectTo)
+        : "";
+      if (!target || !isValidUsername(target) || visited.has(target)) break;
+      visited.add(target);
+      lookupUsername = target;
+    }
     const results = await getDocs(query(collection(store, "creatorProfiles"), where("username", "==", lookupUsername), where("published", "==", true), limit(1)));
     return results.empty ? null : profileFromDoc(results.docs[0].data());
   },
