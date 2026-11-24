@@ -28,7 +28,13 @@ export const firebaseCreatorRepository: CreatorRepository = {
   async get(username) {
     const normalized = normalizeUsername(username);
     if (!isValidUsername(normalized)) return null;
-    const results = await getDocs(query(collection(requireDb(), "creatorProfiles"), where("username", "==", normalized), where("published", "==", true), limit(1)));
+    const store = requireDb();
+    const alias = await getDoc(doc(store, "usernames", normalized));
+    const redirectTo = alias.exists() && typeof alias.data().redirectTo === "string"
+      ? normalizeUsername(alias.data().redirectTo)
+      : "";
+    const lookupUsername = redirectTo && isValidUsername(redirectTo) ? redirectTo : normalized;
+    const results = await getDocs(query(collection(store, "creatorProfiles"), where("username", "==", lookupUsername), where("published", "==", true), limit(1)));
     return results.empty ? null : profileFromDoc(results.docs[0].data());
   },
   async getForUser(uid) {
@@ -77,11 +83,36 @@ export const firebaseCreatorRepository: CreatorRepository = {
     if (!isValidUsername(normalized)) throw new Error("Choose a valid store username.");
     const store = requireDb();
     const profileRef = doc(store, "creatorProfiles", user.uid);
-    const usernameRef = doc(store, "usernames", normalized);
-    const [profile, reservation] = await Promise.all([getDoc(profileRef), getDoc(usernameRef)]);
-    if (!profile.exists() || profile.data().username !== normalized || !reservation.exists() || reservation.data().uid !== user.uid) throw new Error("Your username is immutable after onboarding. Profile changes weren’t saved.");
-    if (profile.data().suspendedAt && creator.published) throw new Error("Your storefront was unpublished after 30 days without a recorded view. Email support@bubbli.in from your registered email to request reactivation.");
-    await updateDoc(profileRef, { displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl ?? "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "ananya", published: creator.published, updatedAt: serverTimestamp() });
+    const currentProfile = await getDoc(profileRef);
+    if (!currentProfile.exists()) throw new Error("Your store profile could not be found.");
+    const oldUsername = normalizeUsername(String(currentProfile.data().username ?? ""));
+    const oldUsernameRef = doc(store, "usernames", oldUsername);
+    const newUsernameRef = doc(store, "usernames", normalized);
+    if (!isValidUsername(oldUsername)) throw new Error("Your current store username is invalid. Contact support.");
+    if (currentProfile.data().suspendedAt && creator.published) throw new Error("Your storefront was unpublished after 30 days without a recorded view. Email support@bubbli.in from your registered email to request reactivation.");
+    await runTransaction(store, async (transaction) => {
+      const [profile, oldReservation, newReservation] = await Promise.all([
+        transaction.get(profileRef), transaction.get(oldUsernameRef), transaction.get(newUsernameRef),
+      ]);
+      if (!profile.exists() || profile.data().uid !== user.uid) throw new Error("Your store profile could not be verified.");
+      if (!oldReservation.exists() || oldReservation.data().uid !== user.uid) throw new Error("Your current store link could not be verified. Contact support.");
+      if (newReservation.exists() && newReservation.data().uid !== user.uid) throw new Error("That username is already taken. Try another.");
+      if (normalized !== oldUsername) {
+        transaction.set(newUsernameRef, { uid: user.uid, username: normalized, createdAt: serverTimestamp() });
+        transaction.update(oldUsernameRef, { uid: user.uid, username: oldUsername, redirectTo: normalized });
+      }
+      transaction.update(profileRef, {
+        username: normalized,
+        displayName: creator.displayName.trim(),
+        bio: creator.bio.trim(),
+        photoURL: creator.avatarUrl ?? "",
+        category: creator.category,
+        socialLinks: creator.socialLinks,
+        theme: creator.theme ?? "ananya",
+        published: creator.published,
+        updatedAt: serverTimestamp(),
+      });
+    });
   },
 };
 
