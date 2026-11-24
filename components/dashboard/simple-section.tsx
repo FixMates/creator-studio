@@ -36,7 +36,7 @@ export function SimpleSection({kind}:{kind:"analytics"|"settings"}) {
     const next=normalizeUsername(usernameDraft);
     if(!isValidUsername(next)||reserved.has(next)){setUsernameError("Use 3–30 characters: lowercase letters, numbers, dashes or underscores. This username may be reserved.");return;}
     if(next===creator.username){setUsernameNotice("Your store link is already up to date.");setUsernameError("");return;}
-    if(!window.confirm(`Change your store URL from /\${creator.username} to /\${next}? Your old link will continue redirecting to the new store URL.`))return;
+    if(!window.confirm(`Change your store URL from /${creator.username} to /${next}? Your old link will continue redirecting to the new store URL.`))return;
     setSavingUsername(true);setUsernameError("");setUsernameNotice("");
     try{
       const repository=getCreatorRepository();
