@@ -104,7 +104,11 @@ service cloud.firestore {
       allow update: if isOwner(uid)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.username == resource.data.username
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["displayName", "bio", "photoURL", "category", "socialLinks", "theme", "published", "updatedAt"])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["username", "displayName", "bio", "photoURL", "category", "socialLinks", "theme", "published", "updatedAt"])
+        && (request.resource.data.username == resource.data.username
+          || (existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username))
+            && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == request.auth.uid
+            && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.username == request.resource.data.username))
         && validProfile(request.resource.data)
         // System-owned activity and suspension metadata cannot be forged or removed.
         && request.resource.data.get("suspendedAt", null) == resource.data.get("suspendedAt", null)
@@ -114,7 +118,8 @@ service cloud.firestore {
     }
 
     match /usernames/{username} {
-      allow get: if signedIn();
+      // Public reads are limited to legacy redirect records; active reservations remain private.
+      allow get: if signedIn() || resource.data.keys().hasAny(["redirectTo"]);
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(["uid", "username", "createdAt"])
         && request.resource.data.uid == request.auth.uid
@@ -122,7 +127,18 @@ service cloud.firestore {
         && username.matches("^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$")
         && existsAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid))
         && getAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid)).data.username == username;
-      allow list, update, delete: if false;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && resource.data.username == username
+        && !("redirectTo" in resource.data)
+        && request.resource.data.keys().hasOnly(["uid", "username", "redirectTo", "createdAt"])
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.username == resource.data.username
+        && request.resource.data.redirectTo is string
+        && request.resource.data.redirectTo.matches("^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$")
+        && existsAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid)).data.username == request.resource.data.redirectTo;
+      allow list, delete: if false;
     }
 
     match /products/{productId} {
