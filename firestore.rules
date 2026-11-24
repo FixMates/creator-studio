@@ -103,7 +103,6 @@ service cloud.firestore {
         && validProfile(request.resource.data);
       allow update: if isOwner(uid)
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.username == resource.data.username
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["username", "displayName", "bio", "photoURL", "category", "socialLinks", "theme", "published", "updatedAt"])
         && (request.resource.data.username == resource.data.username
           || (existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username))
