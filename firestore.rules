@@ -117,8 +117,7 @@ service cloud.firestore {
     }
 
     match /usernames/{username} {
-      // Public reads are limited to legacy redirect records; active reservations remain private.
-      allow get: if signedIn() || resource.data.keys().hasAny(["redirectTo"]);
+      allow get: if signedIn();
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(["uid", "username", "createdAt"])
         && request.resource.data.uid == request.auth.uid
@@ -126,18 +125,21 @@ service cloud.firestore {
         && username.matches("^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$")
         && existsAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid))
         && getAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid)).data.username == username;
-      allow update: if signedIn()
-        && resource.data.uid == request.auth.uid
-        && resource.data.username == username
-        && !("redirectTo" in resource.data)
-        && request.resource.data.keys().hasOnly(["uid", "username", "redirectTo", "createdAt"])
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.username == resource.data.username
+      allow list, update, delete: if false;
+    }
+
+    match /usernameRedirects/{username} {
+      // Only a redirect target is public; active username reservations stay private.
+      allow get: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(["redirectTo", "createdAt"])
         && request.resource.data.redirectTo is string
         && request.resource.data.redirectTo.matches("^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$")
+        && exists(/databases/$(database)/documents/usernames/$(username))
+        && get(/databases/$(database)/documents/usernames/$(username)).data.uid == request.auth.uid
         && existsAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid))
         && getAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid)).data.username == request.resource.data.redirectTo;
-      allow list, delete: if false;
+      allow list, update, delete: if false;
     }
 
     match /products/{productId} {
